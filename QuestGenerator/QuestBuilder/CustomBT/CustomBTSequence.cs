@@ -1,0 +1,97 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using TaleWorlds.CampaignSystem;
+using TaleWorlds.Core;
+using static QuestGenerator.QuestGenTestCampaignBehavior;
+
+namespace QuestGenerator.QuestBuilder.CustomBT
+{
+    public class CustomBTSequence : CustomBTNode
+    {
+
+        public CustomBTSequence(Action a, CustomBTType type, CustomBTNode nodeParent = null) : base(a, type, nodeParent)
+        {
+
+        }
+
+        public CustomBTSequence() { }
+
+        public override CustomBTState run(CustomBTStep step, IssueBase issueBase, QuestGenTestIssue questGen, bool alternative)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    if (node.run(step, issueBase, questGen, alternative) == CustomBTState.fail)
+                    {
+                        return CustomBTState.fail;
+                    }
+                }
+                return CustomBTState.success;
+            }
+
+            else
+            {
+                return CustomBTState.empty;
+            }
+        }
+
+        public override CustomBTState run(CustomBTStep step, QuestBase questBase, QuestGenTestQuest questGen)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    if (node.run(step, questBase, questGen) == CustomBTState.fail)
+                    {
+                        return CustomBTState.fail;
+                    }
+                }
+                return CustomBTState.success;
+            }
+
+            else
+            {
+                return CustomBTState.empty;
+            }
+        }
+
+        public override void updateHeroTargets(string targetString, Hero targetHero)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    node.updateHeroTargets(targetString, targetHero);
+                    
+                }
+            }
+
+        }
+        public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    node.updateSettlementTargets(targetString, targetSettlement);
+
+                }
+            }
+        }
+        public override void updateItemTargets(string targetString, ItemObject targetItem)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    node.updateItemTargets(targetString, targetItem);
+
+                }
+            }
+        }
+    }
+}

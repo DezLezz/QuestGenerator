@@ -1,8 +1,7 @@
-﻿using System;
+﻿using QuestGenerator.QuestBuilder.CustomBT;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
@@ -10,25 +9,34 @@ using static TaleWorlds.CampaignSystem.QuestBase;
 
 namespace QuestGenerator
 {
-    [Serializable]
+    [XmlInclude(typeof(gotoAction)), XmlInclude(typeof(giveAction)), XmlInclude(typeof(gatherAction)), 
+        XmlInclude(typeof(exchangeAction)), XmlInclude(typeof(exploreAction)), XmlInclude(typeof(listenAction)), 
+        XmlInclude(typeof(reportAction)), XmlInclude(typeof(subquestAction))]
     public abstract class actionTarget
     {
         public string action;
 
-        public string target;
+        public int index;
+        public List<CustomBTNode> children;
 
-        public actionTarget(string action, string target)
+        public QuestGenerator.QuestBuilder.Action Action { get; set; }
+
+        public actionTarget(string action, QuestGenerator.QuestBuilder.Action action1)
         {
             this.action = action;
-            this.target = target;
+            this.Action = action1;
         }
 
         public actionTarget() { }
 
-        public abstract void IssueQ(List<actionTarget> list, Settlement issueSettlement, Hero issueGiver);
-        public abstract void QuestQ(List<actionTarget> list, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen, int index);
+        public abstract void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative);
+        public abstract void QuestQ(QuestBase questBase, QuestGenTestQuest questGen);
 
         public abstract void bringTargetsBack();
+
+        public abstract void updateHeroTargets(string targetString, Hero targetHero);
+        public abstract void updateSettlementTargets(string targetString, Settlement targetSettlement);
+        public abstract void updateItemTargets(string targetString, ItemObject targetItem);
 
         public virtual DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
@@ -102,7 +110,7 @@ namespace QuestGenerator
 
         }
 
-        public virtual void OnQuestCompletedEventQuest(QuestBase quest, QuestCompleteDetails questCompleteDetails,int index, QuestGenTestQuest questGen, QuestBase questBase)
+        public virtual void OnQuestCompletedEventQuest(QuestBase quest, QuestCompleteDetails questCompleteDetails, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
 
         }

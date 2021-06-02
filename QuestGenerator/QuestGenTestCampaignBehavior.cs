@@ -1,16 +1,16 @@
-﻿using Helpers;
+﻿using QuestGenerator.QuestBuilder;
+using QuestGenerator.QuestBuilder.CustomBT;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
-using TaleWorlds.CampaignSystem.GameMenus;
+using TaleWorlds.CampaignSystem.LogEntries;
 using TaleWorlds.CampaignSystem.SandBox;
-using TaleWorlds.CampaignSystem.SandBox.CampaignBehaviors;
 using TaleWorlds.Core;
+using TaleWorlds.InputSystem;
+using TaleWorlds.Library;
 using TaleWorlds.Localization;
 using TaleWorlds.SaveSystem;
 
@@ -22,15 +22,16 @@ namespace QuestGenerator
         private const IssueBase.IssueFrequency QuestTestIssueFrequency = IssueBase.IssueFrequency.Common;
 
         [SaveableField(100)]
-        private static List<heroPatch> HeroMotivations = new List<heroPatch>();
+        public static Dictionary<Hero, string> HeroMotivations;
+        //private static List<heroPatch> HeroMotivations = new List<heroPatch>();
 
-        private string path = @"..\..\Modules\QuestGenerator\missionList.txt";
+        private string path = @"..\..\Modules\QuestGenerator\MissionList.xml";
 
-        //[SaveableField(101)]
-        private string[] missions;
+        public static Generator QuestGen = new Generator(0);
 
-        //[SaveableField(102)]
-        private string chosenMission;
+        private List<CustomBTNode> missions;
+
+        private CustomBTNode chosenMission;
 
         static Random rnd = new Random();
 
@@ -38,14 +39,32 @@ namespace QuestGenerator
 
         public QuestGenTestCampaignBehavior()
         {
-            string[] newMissions = File.ReadAllLines(path);
-            this.missions = newMissions;
+            if (new FileInfo(path).Length != 0)
+            {
+                this.missions = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path);
+            }
+            else
+            {
+                this.missions = new List<CustomBTNode>();
+            }
+
+            HeroMotivations = new Dictionary<Hero, string>();
+
+            
         }
 
         public override void RegisterEvents()
         {
             CampaignEvents.OnCheckForIssueEvent.AddNonSerializedListener(this, new Action<Hero>(this.OnCheckForIssue));
-            //OnGameLoadFinishedEvents
+            CampaignEvents.TickEvent.AddNonSerializedListener(this, new Action<float>(this.TickEvent));
+        }
+
+        private void TickEvent(float f)
+        {
+            if (Input.IsKeyDown(InputKey.G))
+            {
+                QuestGen.GenerateOne();
+            }
         }
 
         private void OnCheckForIssue(Hero hero)
@@ -60,8 +79,10 @@ namespace QuestGenerator
                 foreach (Hero h in heroList)
                 {
                     int r = rnd.Next(motivations.Count);
-                    heroPatch hP = new heroPatch(h, motivations[r]);
-                    HeroMotivations.Add(hP);
+                    if (!HeroMotivations.ContainsKey(h))
+                    {
+                        HeroMotivations.Add(h, motivations[r]);
+                    }
                 }
 
                 InformationManager.DisplayMessage(new InformationMessage("Motivations made \n"));
@@ -81,29 +102,27 @@ namespace QuestGenerator
             InformationManager.DisplayMessage(new InformationMessage("Issue Created for hero " + issueOwner.Name.ToString()));
             string motiv = "none";
 
-            foreach (heroPatch hP in HeroMotivations)
+            foreach (Hero h in HeroMotivations.Keys)
             {
-                if (issueOwner.Name == hP.hero.Name)
+                if (issueOwner.Name == h.Name)
                 {
-                    motiv = hP.motivation;
+                    motiv = HeroMotivations[h];
                     break;
                 }
             }
 
-            foreach (string s in this.missions)
+            foreach (CustomBTNode btNode in this.missions)
             {
-                string[] newS = s.Split(',');
-                if (newS[0] == motiv)
+                if (btNode.name == motiv)
                 {
-                    this.chosenMission = s;
-                    File.WriteAllLines(this.path, File.ReadLines(this.path).Where(l => l != s ).ToList());
-                    this.missions = this.missions.Where(val => val != s).ToArray();
+                    this.chosenMission = btNode;
+                    this.missions.Remove(btNode);
+                    XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path, this.missions);
+                    
                     break;
                 }
             }
-            
 
-            
             return new QuestGenTestCampaignBehavior.QuestGenTestIssue(issueOwner, this.chosenMission);
         }
 
@@ -111,19 +130,11 @@ namespace QuestGenerator
         {
             string motiv = "none";
 
-            foreach (heroPatch hP in HeroMotivations)
-            {
-                if (issueGiver.Name == hP.hero.Name)
-                {
-                    motiv = hP.motivation;
-                    break;
-                }
-            }
+            motiv = HeroMotivations[issueGiver];
 
             if (this.missions.IsEmpty())
             {
-                string[] newMissions = File.ReadAllLines(path);
-                this.missions = newMissions;
+                this.missions = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path); 
             }
 
             if (motiv == "none")
@@ -136,13 +147,24 @@ namespace QuestGenerator
                 return false;
             }
 
-            foreach (string s in this.missions)
+            foreach (CustomBTNode btNode in this.missions)
             {
-                string[] newS = s.Split(',');
-                if (newS[0] == motiv)
+                if (btNode.nodeType == CustomBTType.motivation)
                 {
-                    return true;
+                    if (btNode.name == motiv)
+                    {
+                        return true;
+                    }
                 }
+                else
+                {
+                    if (btNode.Children[0].name == motiv)
+                    {
+                        return true;
+                    }
+                }
+
+                
             }
 
             return false;
@@ -167,175 +189,109 @@ namespace QuestGenerator
                 base.AddClassDefinition(typeof(QuestGenTestCampaignBehavior.QuestGenTestQuest), 2);
             }
         }
-        internal class QuestGenTestIssue : IssueBase
+        public class QuestGenTestIssue : IssueBase
         {
             public Hero missionHero;
 
-            public string[] chosenMission;
+            public CustomBTNode chosenMission;
 
-            public List<string> subQuests;
+            public CustomBTNode alternativeMission;
 
-            public int subQuestCounter;
+            //public List<string> subQuests;
 
-            public List<actionTarget> actionsTargets = new List<actionTarget>();
+            //public int subQuestCounter;
 
             public List<JournalLog> journalLogs = new List<JournalLog>();
 
-            protected override bool IssueQuestCanBeDuplicated
-            {
-                get
-                {
+            public List<actionTarget> actionsInOrder = new List<actionTarget>();
+
+            public List<actionTarget> alternativeActionsInOrder = new List<actionTarget>();
+
+            protected override bool IssueQuestCanBeDuplicated {
+                get {
                     return true;
                 }
             }
-            public QuestGenTestIssue(Hero issueOwner, string chosenMission) : base(issueOwner, CampaignTime.DaysFromNow(200f))
+            public QuestGenTestIssue(Hero issueOwner, CustomBTNode chosenMission) : base(issueOwner, CampaignTime.DaysFromNow(200f))
             {
-                //Knowledge,goto place1,listen npc1
                 this.missionHero = issueOwner;
 
-                if(chosenMission.Contains("|"))
+                if (chosenMission.nodeType == CustomBTType.motivation)
                 {
-                    subQuests = new List<string>();
-                    subQuestCounter = 0;
-                    string[] missions = chosenMission.Split('|');
-                    this.chosenMission = missions[0].Split(',');
-                    for (int i = 1; i < missions.Length; i++)
-                    {
-                        subQuests.Add(missions[i]);
-                    }
-
+                    this.chosenMission = chosenMission;
+                    this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
                 }
                 else
                 {
-                    this.chosenMission = chosenMission.Split(',');
-                }
+                    this.chosenMission = chosenMission.Children[0];
+                    this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
 
-                
+                    this.alternativeMission = chosenMission.Children[1];
+                    this.alternativeMission.run(CustomBTStep.issueQ, (IssueBase)this, this, true);
 
-                for (int i = 1; i < this.chosenMission.Count(); i++) 
-                {
-                    string[] ap = this.chosenMission[i].Split(' ');
-                    switch (ap[0])
-                    {
-                        case "goto":
-                            actionTarget newGoto = new gotoAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newGoto);
-                            break;
-                        case "listen":
-                            actionTarget newListen = new listenAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newListen);
-                            break;
-                        case "report":
-                            actionTarget newReport = new reportAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newReport);
-                            break;
-                        case "give":
-                            actionTarget newGive= new giveAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newGive);
-                            break;
-                        case "gather":
-                            actionTarget newGather = new gatherAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newGather);
-                            break;
-                        case "explore":
-                            actionTarget newExplore = new exploreAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newExplore);
-                            break;
-                        case "quest":
-                            actionTarget newQuest = new subquestAction(ap[0], ap[1]);
-                            this.actionsTargets.Add(newQuest);
-                            break;
-                    }
                 }
-                Settlement issueS = base.IssueSettlement;
-                foreach (actionTarget currentAction in this.actionsTargets)
-                {
-                    currentAction.IssueQ(actionsTargets, issueS, base.IssueOwner);
-
-                    if (currentAction.action == "quest")
-                    {
-                        PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
-                        Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, currentAction.GetHeroTarget());
-                    }
-                }
-                
             }
 
-            public IssueBase OnIssueSelected(in PotentialIssueData pid, Hero issueOwner)
-            {
 
-                return new QuestGenTestCampaignBehavior.QuestGenTestIssue(issueOwner, this.subQuests[subQuestCounter]);
-            }
-
-            public override TextObject Title
-            {
-                get
-                {
-                    int r = rnd.Next(5);
-                    TextObject textObject = new TextObject(this.chosenMission[0] + ": " + r, null);
+            public override TextObject Title {
+                get {
+                    TextObject textObject;
+                    if (chosenMission.nodeType == CustomBTType.motivation)
+                    {
+                        textObject = new TextObject(this.chosenMission.name, null);
+                    }
+                    else
+                    {
+                        textObject = new TextObject(this.chosenMission.Children[0].name, null);
+                    }
                     return textObject;
                 }
             }
-            public override TextObject Description
-            {
-                get
-                {
+            public override TextObject Description {
+                get {
                     string textObject = "";
-                    foreach (actionTarget aT in actionsTargets)
+                    foreach (actionTarget aT in actionsInOrder)
                     {
-                        textObject += aT.action + " to " + aT.target + " ";
+                        textObject += aT.action ;
                     }
                     return new TextObject(textObject, null);
                 }
             }
-            protected override TextObject IssueBriefByIssueGiver
-
-            {
-                get
-                {
+            protected override TextObject IssueBriefByIssueGiver {
+                get {
                     string textObject = "";
-                    foreach (actionTarget aT in actionsTargets)
+                    foreach (actionTarget aT in actionsInOrder)
                     {
-                        textObject += aT.action + " to " + aT.target + " ";
+                        textObject += aT.action ;
                     }
                     return new TextObject(textObject, null);
                 }
             }
 
-            protected override TextObject IssueAcceptByPlayer
-            {
-                get
-                {
+            protected override TextObject IssueAcceptByPlayer {
+                get {
                     return new TextObject("IssueAcceptByPlayer", null);
                 }
             }
-            protected override TextObject IssueQuestSolutionExplanationByIssueGiver
-            {
-                get
-                {
-                    
+            protected override TextObject IssueQuestSolutionExplanationByIssueGiver {
+                get {
+
                     return new TextObject("IssueQuestSolutionExplanationByIssueGiver", null);
                 }
             }
-            protected override TextObject IssueQuestSolutionAcceptByPlayer
-            {
-                get
-                {
+            protected override TextObject IssueQuestSolutionAcceptByPlayer {
+                get {
                     return new TextObject("IssueQuestSolutionAcceptByPlayer", null);
                 }
             }
-            protected override bool IsThereAlternativeSolution
-            {
-                get
-                {
+            protected override bool IsThereAlternativeSolution {
+                get {
                     return false;
                 }
             }
 
-            protected override bool IsThereLordSolution
-            {
-                get
-                {
+            protected override bool IsThereLordSolution {
+                get {
                     return false;
                 }
             }
@@ -364,21 +320,35 @@ namespace QuestGenerator
                 throw new NotImplementedException();
             }
 
-            
+
             protected override QuestBase GenerateIssueQuest(string questId)
             {
                 InformationManager.DisplayMessage(new InformationMessage("Quest Created \n"));
-                foreach (actionTarget aT in actionsTargets)
+                foreach (actionTarget aT in actionsInOrder)
                 {
                     this.journalLogs.Add(new JournalLog(this.IssueDueTime, new TextObject(aT.action + "JournalLog", null)));
                 }
-                return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsTargets, this.journalLogs);
+
+                if (this.alternativeMission != null)
+                {
+                    List<JournalLog> alternativeJournalLogs = new List<JournalLog>();
+                    foreach (actionTarget aT in alternativeActionsInOrder)
+                    {
+                        alternativeJournalLogs.Add(new JournalLog(this.IssueDueTime, new TextObject(aT.action + "JournalLog", null)));
+                    }
+                    QuestBase AlternativeQuest = new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId + "_alternative", null, this.alternativeMission, this.alternativeActionsInOrder, alternativeJournalLogs, true);
+                    return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsInOrder, this.journalLogs, false, (QuestGenTestQuest)AlternativeQuest);
+                }
+                else
+                {
+                    return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsInOrder, this.journalLogs, false);
+                }
+
             }
 
             protected override void OnGameLoad()
             {
             }
-            
 
         }
 
@@ -387,10 +357,9 @@ namespace QuestGenerator
             [SaveableField(110)]
             public Hero missionHero;
 
-            [SaveableField(109)]
-            public string[] chosenMission;
+            public CustomBTNode chosenMission;
 
-            public List<actionTarget> actionsTargets;
+            public List<actionTarget> actionsInOrder;
 
             public actionTarget currentAction;
 
@@ -399,6 +368,11 @@ namespace QuestGenerator
 
             [SaveableField(113)]
             public List<JournalLog> journalLogs;
+
+            [SaveableField(114)]
+            public bool alternativeFlag;
+
+            public QuestGenTestQuest alternativeQuest;
 
             //private JournalLog _gotoQuestLog;
             //private JournalLog _listenQuestLog;
@@ -417,94 +391,75 @@ namespace QuestGenerator
                 {
                     collectedObjects.Add(jL);
                 }
-                //collectedObjects.Add(this._gotoQuestLog);
-                //collectedObjects.Add(this._listenQuestLog);
-                //collectedObjects.Add(this._reportQuestLog);
             }
 
-            //internal static object AutoGeneratedGetMemberValue_gotoQuestLog(object o)
-            //{
-            //    return ((QuestGenTestCampaignBehavior.QuestGenTestQuest)o)._gotoQuestLog;
-            //}
-
-            //internal static object AutoGeneratedGetMemberValue_listenQuestLog(object o)
-            //{
-            //    return ((QuestGenTestCampaignBehavior.QuestGenTestQuest)o)._listenQuestLog;
-            //}
-
-            //internal static object AutoGeneratedGetMemberValue_reportQuestLog(object o)
-            //{
-            //    return ((QuestGenTestCampaignBehavior.QuestGenTestQuest)o)._reportQuestLog;
-            //}
-
-            public override bool IsRemainingTimeHidden
-            {
-                get
-                {
+            public override bool IsRemainingTimeHidden {
+                get {
                     return false;
                 }
             }
 
-            public override TextObject Title
-            {
-                get
-                {
-                    TextObject textObject = new TextObject(this.chosenMission[0], null);
+            public override TextObject Title {
+                get {
+                    TextObject textObject = new TextObject(this.chosenMission.name, null);
                     return textObject;
                 }
             }
 
-            private TextObject SuccessQuestLogText
-            {
-                get
-                {
+            private TextObject SuccessQuestLogText {
+                get {
                     TextObject textObject = new TextObject("You did it.", null);
                     return textObject;
                 }
             }
 
-            private TextObject FailTimedOutQuestLogText
-            {
-                get
-                {
+            private TextObject FailTimedOutQuestLogText {
+                get {
                     TextObject textObject = new TextObject("Timed out quest test.", null);
                     return textObject;
                 }
             }
 
-            public QuestGenTestQuest(string questId, Hero questGiver, string[] chosenMission, List<actionTarget> actionsTargets, List<JournalLog> journalLogs) : base(questId, questGiver, CampaignTime.DaysFromNow(200f), 0)
+            public QuestGenTestQuest(string questId, Hero questGiver, CustomBTNode chosenMission, List<actionTarget> actionsInOrder, List<JournalLog> journalLogs, bool alternative, QuestGenTestQuest alternativeReference = null) : base(questId, questGiver, CampaignTime.DaysFromNow(200f), 0)
             {
-
+                this.alternativeFlag = alternative;
                 InformationManager.DisplayMessage(new InformationMessage("Create Quest"));
                 this.missionHero = questGiver;
                 this.chosenMission = chosenMission;
-                this.actionsTargets = actionsTargets;
+                this.actionsInOrder = actionsInOrder;
                 this.journalLogs = journalLogs;
-
-                this.missionHero.AddEventForOccupiedHero(base.StringId);
-
-                
+                if (!alternative)
+                {
+                    this.alternativeQuest = alternativeReference;
+                    this.missionHero.AddEventForOccupiedHero(base.StringId);
+                }
 
                 this.SetDialogs();
                 base.InitializeQuestOnCreation();
 
+                if (alternative)
+                {
+                    this.QuestAcceptedConsequences();
+                }
+
             }
             protected override void InitializeQuestOnGameLoad()
             {
+                
                 this.SetDialogs();
                 loadActionTargets();
-                this.currentAction = this.actionsTargets[this.currentActionIndex];
+                this.currentAction = this.actionsInOrder[this.currentActionIndex];
 
-                for (int i = 0; i < this.actionsTargets.Count; i++)
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
-                    var aT = this.actionsTargets[i];
+                    var aT = this.actionsInOrder[i];
 
                     aT.bringTargetsBack();
                 }
 
-                for (int i = 0; i < this.actionsTargets.Count; i++)
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
-                    var aT = this.actionsTargets[i];
+                    var aT = this.actionsInOrder[i];
                     switch (aT.action)
                     {
 
@@ -515,6 +470,12 @@ namespace QuestGenerator
                             Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
                             break;
                         case "give":
+                            if (aT.GetHeroTarget() != null)
+                            {
+                                Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
+                            }
+                            break;
+                        case "exchange":
                             if (aT.GetHeroTarget() != null)
                             {
                                 Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
@@ -545,53 +506,82 @@ namespace QuestGenerator
             {
                 base.StartQuest();
 
-                this.currentAction = actionsTargets[0];
+                this.currentAction = actionsInOrder[0];
                 this.currentActionIndex = 0;
 
-                for (int i = 0; i < actionsTargets.Count; i++)
-                {
-                    var cAction = actionsTargets[i];
-                    cAction.QuestQ(this.actionsTargets, this.missionHero, (QuestBase)this, this, i);
-                }
+                this.chosenMission.run(CustomBTStep.questQ, (QuestBase)this, this);
 
                 saveActionTargets();
+
             }
 
-            private void saveActionTargets() 
+            private void saveActionTargets()
             {
                 string id = base.StringId;
-                string path = @"..\..\Modules\QuestGenerator\SaveFiles\saveFile" + id + ".bin";
-                BinarySerialization.WriteToBinaryFile<List<actionTarget>>(path, this.actionsTargets);
+
+                string path1 = @"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + ".xml";
+                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
+                XmlSerialization.WriteToXmlFile<List<actionTarget>>(path1, this.actionsInOrder);
+                XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path2, new List<CustomBTNode>() { this.chosenMission });
             }
 
             private void loadActionTargets()
             {
                 string id = base.StringId;
-                string path = @"..\..\Modules\QuestGenerator\SaveFiles\saveFile" + id + ".bin";
-                this.actionsTargets = BinarySerialization.ReadFromBinaryFile<List<actionTarget>>(path);
+
+                string path1 = @"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + ".xml";
+                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
+                this.actionsInOrder = XmlSerialization.ReadFromXmlFile<List<actionTarget>>(path1);
+                this.chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
+
+                if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml") && alternativeFlag == false)
+                {
+                    foreach(QuestBase qb in Campaign.Current.QuestManager.Quests)
+                    {
+                        if (qb.StringId == base.StringId + "_alternative")
+                        {
+                            this.alternativeQuest = (QuestGenTestQuest)qb;
+                            this.alternativeQuest.InitializeQuestOnGameLoad();
+                        }
+                    }
+                }
+                
             }
 
             public bool ReturnItemClickableConditions(out TextObject explanation)
             {
-                if(this.actionsTargets[currentActionIndex+1].GetItemTarget() != null)
+                if (this.actionsInOrder[currentActionIndex].GetItemTarget() != null)
                 {
-                    if (this.journalLogs[currentActionIndex].CurrentProgress >= this.actionsTargets[currentActionIndex + 1].GetItemAmount())
+                    if (PartyBase.MainParty.ItemRoster.GetItemNumber(this.actionsInOrder[currentActionIndex].GetItemTarget()) >= this.actionsInOrder[currentActionIndex].GetItemAmount())
                     {
                         explanation = TextObject.Empty;
                         return true;
                     }
                 }
 
+                explanation = new TextObject("You don't have enough of that item.", null);
+                return false;
+            }
+
+            public bool ReturnItemClickableConditionsExchange(out TextObject explanation)
+            {
+
+                if (this.journalLogs[currentActionIndex].CurrentProgress == 0 && this.journalLogs[currentActionIndex].TaskName == new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null))
+                {
+                    explanation = TextObject.Empty;
+                    return true;
+                }
                 
                 explanation = new TextObject("You don't have enough of that item.", null);
                 return false;
             }
 
-            
-
             public void SuccessConsequences()
             {
-                GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, 100, false);
+                if (!alternativeFlag)
+                {
+                    GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, 100, false);
+                }
                 TextObject textObject = new TextObject("You have completed the mission", null);
                 base.AddLog(textObject, true);
                 base.CompleteQuestWithSuccess();
@@ -616,8 +606,8 @@ namespace QuestGenerator
                 //CampaignEvents.HeroRelationChanged.AddNonSerializedListener(this, new Action<Hero, Hero, int, bool>(this.OnHeroRelationChanged));
             }
 
-            private void OnSettlementEntered(MobileParty party, Settlement settlement, Hero hero) 
-            { 
+            private void OnSettlementEntered(MobileParty party, Settlement settlement, Hero hero)
+            {
                 if (party == MobileParty.MainParty && settlement.GatePosition.NearlyEquals(MobileParty.MainParty.Position2D, MobileParty.MainParty.SeeingRange + 2f))
                 {
                     switch (this.currentAction.action)
@@ -634,9 +624,9 @@ namespace QuestGenerator
 
             private void OnPlayerInventoryExchange(List<ValueTuple<ItemRosterElement, int>> purchasedItems, List<ValueTuple<ItemRosterElement, int>> soldItems, bool isTrading)
             {
-                for (int i = 0; i < this.actionsTargets.Count; i++)
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
-                    var aT = this.actionsTargets[i];
+                    var aT = this.actionsInOrder[i];
                     switch (aT.action)
                     {
                         case "give":
@@ -644,6 +634,10 @@ namespace QuestGenerator
                             break;
 
                         case "gather":
+                            aT.OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, i, this, (QuestBase)this);
+                            break;
+
+                        case "exchange":
                             aT.OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, i, this, (QuestBase)this);
                             break;
                     }
@@ -656,15 +650,18 @@ namespace QuestGenerator
             {
                 if (party.IsMainParty)
                 {
-                    for (int i = 0; i < this.actionsTargets.Count; i++)
+                    for (int i = 0; i < this.actionsInOrder.Count; i++)
                     {
-                        var aT = this.actionsTargets[i];
+                        var aT = this.actionsInOrder[i];
                         switch (aT.action)
                         {
-                            case "give":  
+                            case "give":
                                 aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
                                 break;
 
+                            case "exchange":
+                                aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
+                                break;
                         }
 
                     }
@@ -675,13 +672,17 @@ namespace QuestGenerator
             {
                 if (supporterHero == Hero.MainHero || supportedHero == Hero.MainHero)
                 {
-                    for (int i = 0; i < this.actionsTargets.Count; i++)
+                    for (int i = 0; i < this.actionsInOrder.Count; i++)
                     {
-                        var aT = this.actionsTargets[i];
+                        var aT = this.actionsInOrder[i];
                         switch (aT.action)
                         {
-                            case "give":  
-                                aT.OnHeroSharedFoodWithAnotherHeroQuest(supporterHero,supportedHero, influence, i, this, (QuestBase)this);
+                            case "give":
+                                aT.OnHeroSharedFoodWithAnotherHeroQuest(supporterHero, supportedHero, influence, i, this, (QuestBase)this);
+                                break;
+
+                            case "exchange":
+                                aT.OnHeroSharedFoodWithAnotherHeroQuest(supporterHero, supportedHero, influence, i, this, (QuestBase)this);
                                 break;
                         }
 
@@ -693,13 +694,20 @@ namespace QuestGenerator
             {
                 if (hero.PartyBelongedTo == MobileParty.MainParty)
                 {
-                    for (int i = 0; i < this.actionsTargets.Count; i++)
+                    for (int i = 0; i < this.actionsInOrder.Count; i++)
                     {
-                        var aT = this.actionsTargets[i];
+                        var aT = this.actionsInOrder[i];
                         switch (aT.action)
                         {
                             case "gather":
                                 aT.OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
+                                break;
+
+                            case "exchange":
+                                if (aT.GetHeroTarget() != null)
+                                {
+                                    aT.OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
+                                }
                                 break;
                         }
 
@@ -709,33 +717,54 @@ namespace QuestGenerator
 
             private void OnNewItemCraftedEvent(ItemObject item, Crafting.OverrideData crafted)
             {
-                for (int i = 0; i < this.actionsTargets.Count; i++)
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
-                    var aT = this.actionsTargets[i];
+                    var aT = this.actionsInOrder[i];
                     switch (aT.action)
                     {
                         case "gather":
                             aT.OnNewItemCraftedEventQuest(item, crafted, i, this, (QuestBase)this);
                             break;
+                        case "exchange":
+                            if (aT.GetHeroTarget() != null)
+                            {
+                                aT.OnNewItemCraftedEventQuest(item, crafted, i, this, (QuestBase)this);
+                            }
+                            break;
                     }
                 }
             }
 
-            private void OnItemProducedEvent(ItemObject itemObject, Settlement settlement, int count) 
+            private void OnItemProducedEvent(ItemObject itemObject, Settlement settlement, int count)
             {
-                
+
             }
 
             private void OnQuestCompletedEvent(QuestBase quest, QuestCompleteDetails questCompleteDetails)
             {
-                for (int i = 0; i < this.actionsTargets.Count; i++)
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
-                    var aT = this.actionsTargets[i];
+                    var aT = this.actionsInOrder[i];
                     switch (aT.action)
                     {
                         case "quest":
                             aT.OnQuestCompletedEventQuest(quest, questCompleteDetails, i, this, (QuestBase)this);
                             break;
+                    }
+                }
+
+                if (alternativeFlag)
+                {
+                    if (quest.StringId + "_alternative" == base.StringId && this.currentActionIndex == this.actionsInOrder.Count) 
+                    {
+                        this.SuccessConsequences();
+                    }
+                }
+                else
+                {
+                    if (quest.StringId.Replace("_alternative", "") == base.StringId && this.currentActionIndex == this.actionsInOrder.Count)
+                    {
+                        this.SuccessConsequences();
                     }
                 }
             }

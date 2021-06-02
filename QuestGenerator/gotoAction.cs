@@ -1,27 +1,27 @@
 ﻿using Helpers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.Localization;
 using TaleWorlds.Core;
+using TaleWorlds.Localization;
+using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
+using QuestGenerator.QuestBuilder;
 
 namespace QuestGenerator
 {
-    [Serializable]
-    class gotoAction : actionTarget
+    public class gotoAction : actionTarget
     {
-        [NonSerialized]
+        [XmlIgnore]
         public Settlement settlementTarget;
-        public gotoAction(string action, string target) : base(action, target)
+        
+        public gotoAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
         }
-
         public gotoAction() { }
-
+        
         public override Settlement GetSettlementTarget()
         {
             return this.settlementTarget;
@@ -36,7 +36,7 @@ namespace QuestGenerator
         {
             if (this.settlementTarget == null)
             {
-                var setName = this.target;
+                var setName = this.Action.param[0].target;
 
                 Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == setName) select x).ToArray<Settlement>();
 
@@ -51,29 +51,33 @@ namespace QuestGenerator
             }
         }
 
-        public override void IssueQ(List<actionTarget> list, Settlement issueSettlement, Hero issueGiver)
+        public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
         {
-            if (this.target.Contains("place"))
-            {
-                string placeNumb = this.target;
+
+            //if (this.Action.param[0].target.Contains("place"))
+            //{
+                string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
                     float num;
-                    return x != issueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, issueSettlement, 100f, out num);
+                    return x != questBase.IssueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 100f, out num);
                 });
-                foreach (actionTarget nextAction in list)
-                {
-                    if (nextAction.target == placeNumb)
-                    {
-                        nextAction.target = settlement.Name.ToString();
-                        nextAction.SetSettlementTarget(settlement);
-                    }
-                }
+                
+            if (alternative)
+            {
+                questGen.alternativeMission.updateSettlementTargets(placeNumb, settlement);
             }
+            else
+            {
+                questGen.chosenMission.updateSettlementTargets(placeNumb, settlement);
+            }
+            //}
+
         }
 
-        public override void QuestQ(List<actionTarget> list, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen, int index)
+        public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
+
             if (this.settlementTarget != null)
             {
                 questBase.AddTrackedObject(this.settlementTarget);
@@ -81,28 +85,48 @@ namespace QuestGenerator
                 textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
                 questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
             }
-
         }
 
         public override void OnSettlementEnteredQuest(MobileParty party, Settlement settlement, Hero hero, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
-            if (settlement.Name.ToString() == questGen.currentAction.target)
+            if (settlement.Name == this.settlementTarget.Name)
             {
                 InformationManager.DisplayMessage(new InformationMessage("Settlement Reached"));
-                questGen.UpdateQuestTaskS(questGen.journalLogs[questGen.currentActionIndex], 1);
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
                 questGen.currentActionIndex++;
             }
 
-            if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
             {
-                questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
             }
             else
             {
                 questGen.SuccessConsequences();
             }
 
+        }
+
+        public override void updateHeroTargets(string targetString, Hero targetHero)
+        {
+        }
+
+        public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
+        {
+            foreach (Parameter p in this.Action.param)
+            {
+                if (p.target == targetString)
+                {
+                    p.target = targetSettlement.Name.ToString();
+                    this.settlementTarget = targetSettlement;
+                    break;
+                }
+            }
+        }
+
+        public override void updateItemTargets(string targetString, ItemObject targetItem)
+        {
         }
 
     }

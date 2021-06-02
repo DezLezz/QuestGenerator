@@ -1,35 +1,32 @@
-﻿using Helpers;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.Localization;
-using TaleWorlds.Core;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
 using TaleWorlds.CampaignSystem.Actions;
-using System.IO;
+using TaleWorlds.Core;
+using TaleWorlds.Localization;
+using System.Xml.Serialization;
+using static QuestGenerator.QuestGenTestCampaignBehavior;
+using QuestGenerator.QuestBuilder;
 
 namespace QuestGenerator
 {
-    [Serializable]
-    class giveAction : actionTarget
+    public class giveAction : actionTarget
     {
         static Random rnd = new Random();
 
-        [NonSerialized]
+        [XmlIgnore]
         public Hero heroTarget;
 
-        [NonSerialized]
+        [XmlIgnore]
         public ItemObject itemTarget;
 
-        public int itemAmount;
+        public int itemAmount = 0;
 
-        public giveAction(string action, string target) : base(action, target)
+        public giveAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
         }
-
         public giveAction() { }
 
         public override int GetItemAmount()
@@ -65,12 +62,9 @@ namespace QuestGenerator
         public override void bringTargetsBack()
         {
 
-            int amount = this.GetItemAmount();
-
-            if (this.heroTarget == null && amount<=0)
+            if (this.heroTarget == null)
             {
-                var setName = this.target;
-                InformationManager.DisplayMessage(new InformationMessage(setName));
+                var setName = this.Action.param[0].target;
 
                 Hero[] array = (from x in Hero.All where (x.Name.ToString() == setName) select x).ToArray<Hero>();
 
@@ -84,10 +78,9 @@ namespace QuestGenerator
                 }
             }
 
-            if (this.GetItemTarget() == null && amount > 0)
+            if (this.GetItemTarget() == null)
             {
-                var setName = this.target;
-                InformationManager.DisplayMessage(new InformationMessage(setName));
+                var setName = this.Action.param[1].target;
 
                 ItemObject[] array = (from x in ItemObject.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
@@ -102,64 +95,31 @@ namespace QuestGenerator
 
             }
         }
-        public override void IssueQ(List<actionTarget> list, Settlement issueSettlement, Hero issueGiver)
+        public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
         {
-            if (this.target.Contains("npc"))
+            if (this.Action.param[0].target.Contains("npc"))
             {
-                string npcNumb = this.target;
+                string npcNumb = this.Action.param[0].target;
                 string targetHero = "none";
                 Hero newHero = new Hero();
-                int i = list.IndexOf(this);
+                int i = this.index;
                 if (i > 0)
                 {
-                    if (list[i - 1].action == "goto")
+                    if (questGen.actionsInOrder[i - 1].action == "goto")
                     {
-                        Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == list[i - 1].target) select x).ToArray<Settlement>();
+                        Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
 
-                        if (array.Length > 1)
-                        {
-                            InformationManager.DisplayMessage(new InformationMessage("Everything is on fire Issue"));
-                        }
-                        if (array.Length == 1)
-                        {
-                            newHero = array[0].Notables.GetRandomElement();
-                            targetHero = newHero.Name.ToString();
-
-                        }
-
-                        if (targetHero != "none")
-                        {
-                            foreach (actionTarget nextAction in list)
-                            {
-                                if (nextAction.target == npcNumb)
-                                {
-                                    nextAction.target = targetHero;
-                                    nextAction.SetHeroTarget(newHero);
-                                }
-                            }
-                        }
-
+                        newHero = settlement.Notables.GetRandomElement();
+                        targetHero = newHero.Name.ToString();
                     }
                     else
                     {
-                        foreach (Hero hero in issueSettlement.Notables)
+                        foreach (Hero hero in questBase.IssueSettlement.Notables)
                         {
-                            if (hero != issueGiver)
+                            if (hero != questGen.IssueOwner)
                             {
                                 targetHero = hero.Name.ToString();
                                 newHero = hero;
-                            }
-                        }
-
-                        if (targetHero != "none")
-                        {
-                            foreach (actionTarget nextAction in list)
-                            {
-                                if (nextAction.target == npcNumb)
-                                {
-                                    nextAction.target = targetHero;
-                                    nextAction.SetHeroTarget(newHero);
-                                }
                             }
                         }
                     }
@@ -167,27 +127,25 @@ namespace QuestGenerator
 
                 else if (i == 0)
                 {
-                    foreach (Hero hero in issueSettlement.Notables)
+                    foreach (Hero hero in questBase.IssueSettlement.Notables)
                     {
-                        if (hero != issueGiver)
+                        if (hero != questGen.IssueOwner)
                         {
                             targetHero = hero.Name.ToString();
                             newHero = hero;
-                            break;
                         }
                     }
+                }
 
-                    if (targetHero != "none")
+                if (targetHero != "none")
+                {
+                    if (alternative)
                     {
-                        foreach (actionTarget nextAction in list)
-                        {
-                            if (nextAction.target == npcNumb)
-                            {
-                                nextAction.target = targetHero;
-                                nextAction.SetHeroTarget(newHero);
-                                break;
-                            }
-                        }
+                        questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
+                    }
+                    else
+                    {
+                        questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
                     }
                 }
 
@@ -196,108 +154,89 @@ namespace QuestGenerator
                     InformationManager.DisplayMessage(new InformationMessage("Target Hero is on fire"));
                 }
 
-
             }
 
-            if (this.target.Contains("item"))
+            if (this.Action.param[1].target.Contains("item"))
             {
-                Hero toGiveHero = list[list.IndexOf(this) - 1].GetHeroTarget();
+                Hero toGiveHero = this.heroTarget;
                 int amount = 1;
-                string npcNumb = this.target;
-                
+                string itemNumb = this.Action.param[1].target;
+
                 while (this.GetItemTarget() == null)
                 {
-                    foreach (ItemRosterElement itemRosterElement in issueGiver.CurrentSettlement.ItemRoster)
+                    foreach (ItemRosterElement itemRosterElement in toGiveHero.CurrentSettlement.ItemRoster)
                     {
                         if (itemRosterElement.Amount <= amount)
                         {
-                            this.target = itemRosterElement.EquipmentElement.Item.Name.ToString();
-                            this.SetItemTarget(itemRosterElement.EquipmentElement.Item);
-                            int r = rnd.Next(1,10);
-                            this.SetItemAmount(r);
+                            
+                            if (alternative)
+                            {
+                                questGen.alternativeMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
+                            }
+                            else
+                            {
+                                questGen.chosenMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
+                            }
+                            int r = rnd.Next(1, 10);
+                            this.itemAmount = r;
                             break;
                         }
                     }
                     amount += 1;
                 }
 
-                if (this.GetItemTarget() != null)
-                {
-                    foreach (actionTarget nextAction in list)
-                    {
-                        if (nextAction.target == npcNumb)
-                        {
-                            nextAction.target = this.target;
-                            nextAction.SetItemTarget(this.GetItemTarget());
-                            int r2 = rnd.Next(5) + 5;
-                            nextAction.SetItemAmount(r2);
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("Target Item is on fire"));
-                }
-
             }
 
             else if (this.GetItemTarget() != null && this.GetItemAmount() == 0)
             {
-                int r = rnd.Next(1,10);
+                int r = rnd.Next(1, 10);
                 this.SetItemAmount(r);
             }
 
         }
 
-        public override void QuestQ(List<actionTarget> list, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen, int index)
+        public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
             if (this.heroTarget != null)
             {
                 questBase.AddTrackedObject(this.heroTarget);
-                Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(this.heroTarget, index, questGiver,questBase, questGen), this);
+                Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(this.heroTarget, index, questBase.QuestGiver, questBase, questGen), this);
 
                 TextObject textObject = new TextObject("Get {ITEM_AMOUNT} {ITEM_NAME} to give to {HERO}", null);
                 textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                textObject.SetTextVariable("ITEM_AMOUNT", list[index + 1].GetItemAmount());
-                textObject.SetTextVariable("ITEM_NAME", list[index + 1].GetItemTarget().Name);
-                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(list[index + 1].GetItemTarget());
-                if (currentItemProgress < list[index + 1].GetItemAmount())
+                textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
+                if (currentItemProgress < this.itemAmount)
                 {
                     TextObject textObject1 = new TextObject("You have enough items to complete the quest.", null);
                     textObject1.SetTextVariable("QUEST_SETTLEMENT", questBase.QuestGiver.CurrentSettlement.Name);
                     InformationManager.AddQuickInformation(textObject1, 0, null, "");
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, currentItemProgress, list[index + 1].GetItemAmount(), null, false);
+                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, currentItemProgress, this.itemAmount, null, false);
                 }
                 else
                 {
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, list[index + 1].GetItemAmount(), list[index + 1].GetItemAmount(), null, false);
+                    TextObject textObject2 = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
+                    textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+                    textObject2.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                    textObject2.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                    questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
                 }
 
-
-            }
-            else
-            {
-                TextObject textObject = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
-                textObject.SetTextVariable("HERO", list[index - 1].GetHeroTarget().Name);
-                textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
 
             }
         }
 
-        public override DialogFlow getDialogFlows( int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
+        public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
             return GetGiveActionDialogFlow(this.heroTarget, index, questGiver, questBase, questGen);
         }
 
         private DialogFlow GetGiveActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-
             TextObject npcLine1 = new TextObject("Have you brought {ITEM_AMOUNT} of {ITEM_NAME}?", null);
-            npcLine1.SetTextVariable("ITEM_AMOUNT", questGen.actionsTargets[index + 1].GetItemAmount());
-            npcLine1.SetTextVariable("ITEM_NAME", questGen.actionsTargets[index + 1].GetItemTarget().Name);
+            npcLine1.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+            npcLine1.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
             TextObject textObject = new TextObject("Thank you, {?PLAYER.GENDER}milady{?}sir{\\?}! You are a saviour.", null);
             TextObject textObject2 = new TextObject("We await your success, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
@@ -313,15 +252,14 @@ namespace QuestGenerator
         private void giveConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
             questGen.currentActionIndex++;
-            questGen.currentActionIndex++;
-            questGen.UpdateQuestTaskS(questGen.journalLogs[index + 1], 1);
-            questGen.UpdateQuestTaskS(questGen.journalLogs[index], questGen.actionsTargets[index + 1].GetItemAmount());
 
-            GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, questGen.actionsTargets[index + 1].GetItemTarget(), questGen.actionsTargets[index + 1].GetItemAmount());
+            questGen.UpdateQuestTaskS(questGen.journalLogs[index], 1);
 
-            if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+            GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTarget, this.itemAmount);
+
+            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
             {
-                questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
             }
             else
             {
@@ -357,7 +295,15 @@ namespace QuestGenerator
             if (flag)
             {
                 int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.GetItemTarget());
-                questGen.UpdateQuestTaskS(questGen.journalLogs[index - 1], currentItemProgress);
+                questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+                if (currentItemProgress >= this.itemAmount)
+                {
+                    TextObject textObject = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
+                    textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                    textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                    textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                    questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                }
             }
         }
 
@@ -367,6 +313,15 @@ namespace QuestGenerator
             {
                 int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.GetItemTarget());
                 questGen.UpdateQuestTaskS(questGen.journalLogs[index - 1], currentItemProgress);
+
+                if (currentItemProgress >= this.itemAmount)
+                {
+                    TextObject textObject = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
+                    textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                    textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                    textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                    questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                }
             }
         }
 
@@ -376,6 +331,45 @@ namespace QuestGenerator
             {
                 int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.GetItemTarget());
                 questGen.UpdateQuestTaskS(questGen.journalLogs[index - 1], currentItemProgress);
+
+                if (currentItemProgress >= this.itemAmount)
+                {
+                    TextObject textObject = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
+                    textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                    textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                    textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                    questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                }
+            }
+        }
+
+        public override void updateHeroTargets(string targetString, Hero targetHero)
+        {
+            foreach (Parameter p in this.Action.param)
+            {
+                if (p.target == targetString)
+                {
+                    p.target = targetHero.Name.ToString();
+                    this.heroTarget = targetHero;
+                    break;
+                }
+            }
+        }
+
+        public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
+        {
+        }
+
+        public override void updateItemTargets(string targetString, ItemObject targetItem)
+        {
+            foreach (Parameter p in this.Action.param)
+            {
+                if (p.target == targetString)
+                {
+                    p.target = targetItem.Name.ToString();
+                    this.itemTarget = targetItem;
+                    break;
+                }
             }
         }
 

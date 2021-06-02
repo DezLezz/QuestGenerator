@@ -1,27 +1,24 @@
 ﻿using Helpers;
+using Newtonsoft.Json;
+using QuestGenerator.QuestBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.Localization;
 using TaleWorlds.Core;
+using TaleWorlds.Localization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
-using TaleWorlds.CampaignSystem.Actions;
-using System.IO;
 
 
 namespace QuestGenerator
 {
-    [Serializable]
-    class exploreAction : actionTarget
+    public class exploreAction : actionTarget
     {
-        
-        [NonSerialized]
+        [XmlIgnore]
         public Settlement settlementTarget;
 
-        [NonSerialized]
+        [XmlIgnore]
         public Dictionary<Settlement, string> settlementsToVisit;
 
         public List<string> settlementsToVisitNames;
@@ -32,7 +29,7 @@ namespace QuestGenerator
 
         public int settlementsVisited;
 
-        public exploreAction(string action, string target) : base(action, target)
+        public exploreAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
         }
 
@@ -52,7 +49,7 @@ namespace QuestGenerator
         {
             if (this.settlementTarget == null)
             {
-                var setName = this.target;
+                var setName = this.Action.param[0].target;
                 this.settlementsToVisit = new Dictionary<Settlement, string>();
                 Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == setName) select x).ToArray<Settlement>();
 
@@ -83,36 +80,35 @@ namespace QuestGenerator
             }
         }
 
-        public override void IssueQ(List<actionTarget> list, Settlement issueSettlement, Hero issueGiver)
+        public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
         {
             settlementsToVisit = new Dictionary<Settlement, string>();
             settlementsToVisitNames = new List<string>();
             settlementsToVisitTags = new List<string>();
 
-            if (this.target.Contains("place"))
+            if (this.Action.param[0].target.Contains("place"))
             {
                 this.NumberOfSettlementsToVisit = 3;
                 this.settlementsVisited = 0;
-                string placeNumb = this.target;
+                string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
                     float num;
-                    return x != issueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, issueSettlement, 100f, out num);
+                    return x != questGen.IssueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 100f, out num);
                 });
-                this.target = settlement.Name.ToString();
-                this.SetSettlementTarget(settlement);
-                foreach (actionTarget nextAction in list)
+                
+                if (alternative)
                 {
-                    if (nextAction.target == placeNumb)
-                    {
-                        nextAction.target = settlement.Name.ToString();
-                        nextAction.SetSettlementTarget(settlement);
-                    }
+                    questGen.alternativeMission.updateSettlementTargets(placeNumb, settlement);
+                }
+                else
+                {
+                    questGen.chosenMission.updateSettlementTargets(placeNumb, settlement);
                 }
 
                 this.settlementsToVisitNames.Add(this.settlementTarget.Name.ToString());
                 this.settlementsToVisitTags.Add("no");
-                this.settlementsToVisit.Add(this.settlementTarget,"no");
+                this.settlementsToVisit.Add(this.settlementTarget, "no");
 
                 for (int i = 0; i < 2; i++)
                 {
@@ -144,7 +140,7 @@ namespace QuestGenerator
             }
         }
 
-        public override void QuestQ(List<actionTarget> list, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen, int index)
+        public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
             if (this.settlementTarget != null && !(this.settlementsToVisit.IsEmpty()))
             {
@@ -180,15 +176,36 @@ namespace QuestGenerator
                 }
             }
 
-            if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
             {
-                questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
             }
             else
             {
                 questGen.SuccessConsequences();
             }
 
+        }
+
+        public override void updateHeroTargets(string targetString, Hero targetHero)
+        {
+        }
+
+        public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
+        {
+            foreach (Parameter p in this.Action.param)
+            {
+                if (p.target == targetString)
+                {
+                    p.target = targetSettlement.Name.ToString();
+                    this.settlementTarget = targetSettlement;
+                    break;
+                }
+            }
+        }
+
+        public override void updateItemTargets(string targetString, ItemObject targetItem)
+        {
         }
     }
 }

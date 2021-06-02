@@ -66,8 +66,8 @@
       <HintPath>%(Identity)</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FluentBehaviourTree, Version=0.0.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FluentBehaviourTree.0.0.4.0\lib\net35\FluentBehaviourTree.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="TaleWorlds.Localization">
@@ -102,7 +102,26 @@
   <ItemGroup>
     <Compile Include="actionTarget.cs" />
     <Compile Include="BinarySerialization.cs" />
-    <Compile Include="RefinePath.cs" />
+    <Compile Include="QuestBuilder\Action.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTAction.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTSelector.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTMotivation.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTNode.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTSequence.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTState.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTStep.cs" />
+    <Compile Include="QuestBuilder\CustomBT\CustomBTType.cs" />
+    <Compile Include="QuestBuilder\Motivation.cs" />
+    <Compile Include="QuestBuilder\Parameter.cs" />
+    <Compile Include="QuestBuilder\Generator.cs" />
+    <Compile Include="QuestBuilder\Quest.cs" />
+    <Compile Include="QuestBuilder\QuestGiver.cs" />
+    <Compile Include="QuestBuilder\QuestNode.cs" />
+    <Compile Include="QuestBuilder\Rules.cs" />
+    <Compile Include="QuestBuilder\Strategy.cs" />
+    <Compile Include="XmlSerialization.cs" />
+    <Compile Include="exchangeAction.cs" />
+    <Compile Include="RefinePatch.cs" />
     <Compile Include="subquestAction.cs" />
     <Compile Include="exploreAction.cs" />
     <Compile Include="gatherAction.cs" />
@@ -119,8 +138,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <!-- Post-Build -->
   <PropertyGroup>
     <PostBuildEvent>xcopy /d /y "$(MSBuildProjectDirectory)\SubModule.xml" "E:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\QuestGenerator"</PostBuildEvent>

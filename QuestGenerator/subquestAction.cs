@@ -1,35 +1,32 @@
 ﻿using Helpers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.Localization;
 using TaleWorlds.Core;
+using TaleWorlds.Localization;
+using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
-using TaleWorlds.CampaignSystem.Actions;
-using System.IO;
 using static TaleWorlds.CampaignSystem.QuestBase;
+using QuestGenerator.QuestBuilder;
 
 namespace QuestGenerator
 {
-    [Serializable]
-    class subquestAction : actionTarget
+    public class subquestAction : actionTarget
     {
 
-        [NonSerialized]
+        [XmlIgnore]
         public Hero heroTarget;
 
-        [NonSerialized]
+        [XmlIgnore]
         public Settlement settlementTarget;
 
         public string settlementTargetString;
 
-        public subquestAction(string action, string target) : base(action, target)
+        public subquestAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
         }
-
         public subquestAction() { }
 
         public override Hero GetHeroTarget()
@@ -72,7 +69,7 @@ namespace QuestGenerator
 
             if (this.heroTarget == null)
             {
-                var setName = this.target;
+                var setName = this.Action.param[0].target;
 
                 Hero[] array = (from x in Hero.All where (x.Name.ToString() == setName) select x).ToArray<Hero>();
 
@@ -87,38 +84,32 @@ namespace QuestGenerator
             }
         }
 
-        public override void IssueQ(List<actionTarget> list, Settlement issueSettlement, Hero issueGiver)
+        public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
         {
-            if (this.target.Contains("npc"))
+            if (this.Action.param[0].target.Contains("npc"))
             {
-                string npcNumb = this.target;
+                string npcNumb = this.Action.param[0].target;
                 string targetHero = "none";
                 Hero newHero = new Hero();
-                int i = list.IndexOf(this);
-                if (i > 0)
-                {
-                    if (list[i - 1].action == "goto")
-                    {
-                        Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == list[i - 1].target) select x).ToArray<Settlement>();
 
-                        if (array.Length > 1)
+                if (this.index > 0)
+                {
+                    if (questGen.actionsInOrder[this.index -1].action == "goto")
+                    {
+                        Settlement settlement = questGen.actionsInOrder[this.index - 1].GetSettlementTarget();
+
+                        
+                        foreach (Hero h in settlement.Notables)
                         {
-                            InformationManager.DisplayMessage(new InformationMessage("Everything is on fire Issue"));
-                        }
-                        if (array.Length == 1)
-                        {
-                            foreach (Hero h in array[0].Notables)
+                            if (h.Issue == null && !h.IsOccupiedByAnEvent())
                             {
-                                if (h.Issue == null && !h.IsOccupiedByAnEvent())
-                                {
-                                    newHero = h;
-                                    targetHero = newHero.Name.ToString();
-                                    break;
-                                }
+                                newHero = h;
+                                targetHero = h.Name.ToString();
+                                break;
                             }
-                            settlementTargetString = array[0].Name.ToString();
-                            settlementTarget = array[0];
                         }
+                        settlementTargetString = settlement.Name.ToString();
+                        settlementTarget = settlement;
                         
                     }
                     else
@@ -128,7 +119,7 @@ namespace QuestGenerator
                             float num;
                             if (Enumerable.Any<Hero>(x.Notables, (Hero y) => !y.IsOccupiedByAnEvent()))
                             {
-                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, issueSettlement, 150f, out num);
+                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 150f, out num);
                             }
                             return false;
                         });
@@ -147,15 +138,14 @@ namespace QuestGenerator
                         settlementTarget = settlement;
                     }
                 }
-
-                else if (i == 0)
+                else if (this.index == 0)
                 {
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
                         float num;
                         if (Enumerable.Any<Hero>(x.Notables, (Hero y) => !y.IsOccupiedByAnEvent()))
                         {
-                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, issueSettlement, 150f, out num);
+                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 150f, out num);
                         }
                         return false;
                     });
@@ -173,16 +163,15 @@ namespace QuestGenerator
                     settlementTargetString = settlement.Name.ToString();
                     settlementTarget = settlement;
                 }
-
                 if (targetHero != "none")
                 {
-                    foreach (actionTarget nextAction in list)
+                    if (alternative)
                     {
-                        if (nextAction.target == npcNumb)
-                        {
-                            nextAction.target = targetHero;
-                            nextAction.SetHeroTarget(newHero);
-                        }
+                        questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
+                    }
+                    else
+                    {
+                        questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
                     }
                 }
                 if (targetHero == "none")
@@ -197,16 +186,24 @@ namespace QuestGenerator
                 this.settlementTargetString = this.settlementTarget.Name.ToString();
             }
 
+            PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+            Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, this.heroTarget);
+
         }
 
-        public override void QuestQ(List<actionTarget> list, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen, int index)
+        public IssueBase OnIssueSelected(in PotentialIssueData pid, Hero issueOwner)
+        {
+            return new QuestGenTestCampaignBehavior.QuestGenTestIssue(issueOwner, this.children[0]);
+        }
+
+        public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
             if (this.settlementTarget != null)
             {
                 TextObject textObject = new TextObject("Talk to {HERO} in {SETTLEMENT} and perform its task.", null);
                 textObject.SetTextVariable("HERO", this.heroTarget.Name);
                 textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
             }
             else
             {
@@ -218,19 +215,40 @@ namespace QuestGenerator
         {
             if (quest.QuestGiver == this.heroTarget)
             {
-                questGen.UpdateQuestTaskS(questGen.journalLogs[questGen.currentActionIndex], 1);
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
                 questGen.currentActionIndex++;
             }
 
-            if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
             {
-                questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
             }
             else
             {
                 questGen.SuccessConsequences();
             }
+        }
+
+        public override void updateHeroTargets(string targetString, Hero targetHero)
+        {
+            foreach (Parameter p in this.Action.param)
+            {
+                if (p.target == targetString)
+                {
+                    p.target = targetHero.Name.ToString();
+                    this.heroTarget = targetHero;
+                    break;
+                }
+            }
+        }
+
+        public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
+        {
+        }
+
+        public override void updateItemTargets(string targetString, ItemObject targetItem)
+        {
         }
     }
 }

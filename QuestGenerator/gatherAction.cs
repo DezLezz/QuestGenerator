@@ -1,37 +1,34 @@
 ﻿using Helpers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Craft.Refinement;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
+using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
+using QuestGenerator.QuestBuilder;
 
 namespace QuestGenerator
 {
-    [Serializable]
-    class gatherAction : actionTarget
+    public class gatherAction : actionTarget
     {
         static Random rnd = new Random();
 
-        [NonSerialized]
+        [XmlIgnore]
         public ItemObject itemTarget;
 
-        [NonSerialized]
+        [XmlIgnore]
         public Settlement settlementTarget;
 
         public int itemAmount;
 
         public string settlementStringTarget;
 
-        public gatherAction(string action, string target) : base(action, target)
+        public gatherAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
         }
-
         public gatherAction() { }
 
         public override int GetItemAmount()
@@ -68,7 +65,7 @@ namespace QuestGenerator
         {
             if (this.GetItemTarget() == null)
             {
-                var setName = this.target;
+                var setName = this.Action.param[0].target;
                 InformationManager.DisplayMessage(new InformationMessage(setName));
 
                 ItemObject[] array = (from x in ItemObject.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
@@ -101,25 +98,24 @@ namespace QuestGenerator
             }
         }
 
-        public override void IssueQ(List<actionTarget> list, Settlement issueSettlement, Hero issueGiver)
+        public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
         {
-            if (this.target.Contains("item"))
+            if (this.Action.param[0].target.Contains("item"))
             {
-                var npcNumb = this.target;
+                var itemNumb = this.Action.param[0].target;
                 int amount = 0;
-                int i = list.IndexOf(this);
+                ItemObject newItem = new ItemObject();
+                int i = this.index;
                 if (i > 0)
                 {
-                    if (list[i - 1].action == "goto")
+                    if (questGen.actionsInOrder[i - 1].action == "goto")
                     {
 
                         var itemList = ItemObject.AllTradeGoods;
 
                         int r = rnd.Next(itemList.Count());
 
-                        this.SetItemTarget(itemList.ElementAt(r));
-
-                        this.target = itemList.ElementAt(r).Name.ToString();
+                        newItem = itemList.ElementAt(r);
 
                         if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
                         {
@@ -128,22 +124,17 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            this.SetItemAmount(2);
+                            this.SetItemAmount(1);
                         }
 
-                        Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == list[i - 1].target) select x).ToArray<Settlement>();
+                        Settlement settlement = questGen.actionsInOrder[i -1].GetSettlementTarget();
 
-                        if (array.Length > 1 || array.Length == 0)
-                        {
-                            InformationManager.DisplayMessage(new InformationMessage("Everything is on fire Issue1"));
-                        }
-
-                        Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
+                        Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                         {
                             float num;
                             bool flag = false;
                             foreach (ItemRosterElement iR in x.ItemRoster)
-                            { 
+                            {
                                 if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
                                 {
                                     flag = true;
@@ -151,18 +142,14 @@ namespace QuestGenerator
                                 }
                             }
 
-                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, array[0], 1500f, out num) && flag;
+                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, settlement, 1500f, out num) && flag;
                         });
 
-                        if (settlement == null)
-                        {
-                            InformationManager.DisplayMessage(new InformationMessage("Everything is on fire Issue2"));
-                        }
-                        else
+                        if (settlement != null)
                         {
                             this.settlementStringTarget = settlement.Name.ToString();
                         }
-                        
+
                         this.SetSettlementTarget(settlement);
                     }
 
@@ -173,9 +160,7 @@ namespace QuestGenerator
 
                         int r = rnd.Next(itemList.Count());
 
-                        this.SetItemTarget(itemList.ElementAt(r));
-
-                        this.target = itemList.ElementAt(r).Name.ToString();
+                        newItem = itemList.ElementAt(r);
 
                         if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
                         {
@@ -184,7 +169,7 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            this.SetItemAmount(2);
+                            this.SetItemAmount(1);
                         }
 
                         Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
@@ -200,14 +185,10 @@ namespace QuestGenerator
                                 }
                             }
 
-                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, issueSettlement, 1500f, out num) && flag;
+                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
                         });
 
-                        if (settlement == null)
-                        {
-                            InformationManager.DisplayMessage(new InformationMessage("Everything is on fire Issue3"));
-                        }
-                        else
+                        if (settlement != null)
                         {
                             this.settlementStringTarget = settlement.Name.ToString();
                         }
@@ -216,28 +197,25 @@ namespace QuestGenerator
                     }
                 }
 
-                
+
 
                 else if (i == 0)
                 {
 
-                    var itemList = (from x in ItemObject.AllTradeGoods where (x.Name.ToString() == "Charcoal") select x).ToList<ItemObject>();
+                    var itemList = ItemObject.AllTradeGoods;
 
                     int r = rnd.Next(itemList.Count());
 
-                    this.SetItemTarget(itemList.ElementAt(r));
+                    newItem = itemList.ElementAt(r);
 
-                    this.target = itemList.ElementAt(r).Name.ToString();
-
-                    if (this.itemTarget.IsCraftedWeapon)
-                    {
-                        
-                        this.SetItemAmount(1);
-                    }
-                    else
+                    if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
                     {
                         amount = rnd.Next(1, 10);
                         this.SetItemAmount(amount);
+                    }
+                    else
+                    {
+                        this.SetItemAmount(1);
                     }
 
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
@@ -253,14 +231,10 @@ namespace QuestGenerator
                             }
                         }
 
-                        return Campaign.Current.Models.MapDistanceModel.GetDistance(x, issueSettlement, 1500f, out num) && flag;
+                        return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
                     });
 
-                    if (settlement == null)
-                    {
-                        InformationManager.DisplayMessage(new InformationMessage("Everything is on fire Issue3"));
-                    }
-                    else
+                    if (settlement != null)
                     {
                         this.settlementStringTarget = settlement.Name.ToString();
                     }
@@ -270,39 +244,40 @@ namespace QuestGenerator
 
                 if (this.GetItemTarget() != null)
                 {
-                    foreach (actionTarget nextAction in list)
+                    if (alternative)
                     {
-                        if (nextAction.target == npcNumb)
-                        {
-                            nextAction.target = this.target;
-                            nextAction.SetItemTarget(this.GetItemTarget());
-                            break;
-                        }
+                        questGen.alternativeMission.updateItemTargets(itemNumb, newItem);
                     }
+                    else
+                    {
+                        questGen.chosenMission.updateItemTargets(itemNumb, newItem);
+                    }
+
                 }
 
             }
-
-            else if (this.GetItemAmount() == 0)
+            else if (this.GetItemAmount() == 0  && this.itemTarget != null)
             {
                 int amount = 0;
                 if (this.itemTarget.IsCraftedWeapon)
                 {
-
                     this.SetItemAmount(1);
                 }
                 else
                 {
-                    amount = rnd.Next(1, 10);
+                    amount = rnd.Next(2, 10);
                     this.SetItemAmount(amount);
                 }
             }
         }
 
-        public override void QuestQ(List<actionTarget> list, Hero questGiver, QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen, int index)
+            
+        
+
+        public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
 
-            if (this.settlementTarget != null) 
+            if (this.settlementTarget != null)
             {
                 TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You can maybe find some in {SETTLEMENT}.", null);
                 textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
@@ -312,7 +287,7 @@ namespace QuestGenerator
             }
             else
             {
-                TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}.", null);
+                TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
                 textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
                 textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
                 questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
@@ -346,9 +321,9 @@ namespace QuestGenerator
             {
                 questGen.currentActionIndex++;
 
-                if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
-                    questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
                 else
                 {
@@ -359,14 +334,14 @@ namespace QuestGenerator
 
         public override void OnEquipmentSmeltedByHeroEventQuest(Hero hero, EquipmentElement equipmentElement, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
-            if (RefinePath.itemRefined)
+            if (RefinePatch.itemRefined)
             {
                 bool flag = false;
                 int amountRemaining = this.GetItemAmount();
                 int amountPurchased = 0;
                 InformationManager.DisplayMessage(new InformationMessage("item refined: " + equipmentElement.Item.Name.ToString()));
 
-                var refined = RefinePath.refineFormulaS;
+                var refined = RefinePatch.refineFormulaS;
 
 
                 if (refined.OutputCount > 0)
@@ -401,9 +376,9 @@ namespace QuestGenerator
                 {
                     questGen.currentActionIndex++;
 
-                    if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
-                        questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                     }
                     else
                     {
@@ -411,7 +386,7 @@ namespace QuestGenerator
                     }
                 }
 
-                RefinePath.itemRefined = false;
+                RefinePatch.itemRefined = false;
             }
             else
             {
@@ -451,9 +426,9 @@ namespace QuestGenerator
                 {
                     questGen.currentActionIndex++;
 
-                    if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
-                        questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                     }
                     else
                     {
@@ -461,7 +436,7 @@ namespace QuestGenerator
                     }
                 }
             }
-            
+
         }
 
         public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, int index, QuestGenTestQuest questGen, QuestBase questBase)
@@ -488,13 +463,34 @@ namespace QuestGenerator
             {
                 questGen.currentActionIndex++;
 
-                if (questGen.currentActionIndex < questGen.actionsTargets.Count)
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
-                    questGen.currentAction = questGen.actionsTargets[questGen.currentActionIndex];
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
                 else
                 {
                     questGen.SuccessConsequences();
+                }
+            }
+        }
+
+        public override void updateHeroTargets(string targetString, Hero targetHero)
+        {
+        }
+
+        public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
+        {
+        }
+
+        public override void updateItemTargets(string targetString, ItemObject targetItem)
+        {
+            foreach (Parameter p in this.Action.param)
+            {
+                if (p.target == targetString)
+                {
+                    p.target = targetItem.Name.ToString();
+                    this.itemTarget = targetItem;
+                    break;
                 }
             }
         }
