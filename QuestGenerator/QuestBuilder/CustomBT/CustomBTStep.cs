@@ -12,6 +12,8 @@ namespace QuestGenerator.QuestBuilder.CustomBT
         [XmlEnum(Name = "issueQ")]
         issueQ,
         [XmlEnum(Name = "questQ")]
-        questQ
+        questQ,
+        [XmlEnum(Name = "actionTarget")]
+        actionTarget
     }
 }

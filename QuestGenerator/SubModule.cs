@@ -33,6 +33,7 @@ namespace QuestGenerator
             Module.CurrentModule.AddInitialStateOption(new InitialStateOption("GenerateOneQuest", new TextObject("Generate one quest (debug purposes)", null), 9990, () => {
                 var gen = new Generator(0);
                 gen.GenerateOne();
+                InformationManager.DisplayMessage(new InformationMessage("Quest Generated"));
             }, () => false));
 
         }

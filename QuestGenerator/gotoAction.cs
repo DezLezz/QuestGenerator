@@ -54,8 +54,8 @@ namespace QuestGenerator
         public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
         {
 
-            //if (this.Action.param[0].target.Contains("place"))
-            //{
+            if (this.Action.param[0].target.Contains("place"))
+            {
                 string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
@@ -63,21 +63,21 @@ namespace QuestGenerator
                     return x != questBase.IssueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 100f, out num);
                 });
                 
-            if (alternative)
-            {
-                questGen.alternativeMission.updateSettlementTargets(placeNumb, settlement);
+                if (alternative)
+                {
+                    questGen.alternativeMission.updateSettlementTargets(placeNumb, settlement);
+                }
+                else
+                {
+                    questGen.chosenMission.updateSettlementTargets(placeNumb, settlement);
+                }
             }
-            else
-            {
-                questGen.chosenMission.updateSettlementTargets(placeNumb, settlement);
-            }
-            //}
 
         }
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-
+            
             if (this.settlementTarget != null)
             {
                 questBase.AddTrackedObject(this.settlementTarget);

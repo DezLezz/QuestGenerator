@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using TaleWorlds.Core;
 
 namespace QuestGenerator.QuestBuilder
 {
@@ -45,8 +46,8 @@ namespace QuestGenerator.QuestBuilder
         public Quest CreateQuest(int questNumb, List<Strategy> strategies, List<Rules> rules)
         {
 
-            //int twoways = rnd.Next(1, 10);
-            int twoways = 0;
+            int twoways = rnd.Next(1, 10);
+            //int twoways = 0;
             if (twoways <= 0)
             {
                 int r = rnd.Next(this.Motivations.Count);
@@ -116,20 +117,13 @@ namespace QuestGenerator.QuestBuilder
                 {
                     int r = rnd.Next(node.motivation.strategies.Count);
                     sequence = node.motivation.strategies[r].actions;
-                    CustomBTNode newNode = new CustomBTSequence(null, CustomBTType.sequence, currentTreeNode);
-                    newNode.name = "Sequence";
-                    currentTreeNode.addNode(newNode);
+
                 }
                 else
                 {
                     if (node.action.type == "SubQuest")
                     {
-                        Action newAction = new Action(node.action.name, node.action.type, node.action.index, node.action.type_of_Target, node.action.param);
-                        q.steps.Add(newAction);
-
-                        CustomBTNode newNode = new CustomBTAction(newAction, CustomBTType.action, currentTreeNode);
-                        newNode.name = newAction.name;
-                        currentTreeNode.addNode(newNode);
+                        q.steps.Add(node.action);
 
                         //int qn = questNumb + 1;
                         //this.subQuests.Add(this.CreateQuest(qn, strategies, rules));
@@ -140,9 +134,9 @@ namespace QuestGenerator.QuestBuilder
                         qNode.motivation = this.Motivations[r];
                         node.childNodes.Add(qNode);
 
-                        CustomBTNode newNode2 = new CustomBTMotivation(null, CustomBTType.motivation, newNode);
-                        newNode2.name = this.Motivations[r].name;
-                        newNode.addNode(newNode2);
+                        CustomBTNode newNode = new CustomBTMotivation(null, CustomBTType.motivation, currentTreeNode);
+                        newNode.name = this.Motivations[r].name;
+                        currentTreeNode.addNode(newNode);
 
                     }
                     else
@@ -153,9 +147,6 @@ namespace QuestGenerator.QuestBuilder
 
                         node.rule.weights = updateWeights(node.rule.actions, node.rule.weights, index, q.root.Depth.Count);
 
-                        CustomBTNode newNode = new CustomBTSequence(null, CustomBTType.sequence, currentTreeNode);
-                        newNode.name = "Sequence";
-                        currentTreeNode.addNode(newNode);
                     }
                 }
 
@@ -171,7 +162,6 @@ namespace QuestGenerator.QuestBuilder
                     Action a = new Action(aS.name, aS.type, aS.index, aS.type_of_Target, newParamList);
                     if (a.name.Contains("<"))
                     {
-
                         QuestNode qNode = new QuestNode(a.name, q, node);
                         foreach (Rules r in rules)
                         {
@@ -191,17 +181,20 @@ namespace QuestGenerator.QuestBuilder
                     }
                     else
                     {
-                        QuestNode qNode = new QuestNode(a.name, q, node);
-                        qNode.action = a;
-                        node.childNodes.Add(qNode);
+                        if (a.name != "")
+                        {
+                            QuestNode qNode = new QuestNode(a.name, q, node);
+                            qNode.action = a;
+                            node.childNodes.Add(qNode);
+                            CustomBTNode newNode = new CustomBTAction(a, CustomBTType.action, currentTreeNode);
+                            newNode.name = a.name;
+                            currentTreeNode.addNode(newNode);
 
-                        CustomBTNode newNode = new CustomBTAction(a, CustomBTType.action, currentTreeNode);
-                        newNode.name = a.name;
-                        currentTreeNode.addNode(newNode);
+                        }
+
                     }
                 }
                 BindParameters(node);
-
                 for (int i = 0; i < node.childNodes.Count; i++)
                 {
                     var child = node.childNodes[i];
@@ -248,10 +241,8 @@ namespace QuestGenerator.QuestBuilder
                                 node.parentQuest.itemCounter++;
                             }
                             else if (param1.type == "Location")
-                            {
-                                int r = rnd.Next(1, 100000);
-                                param1.target = r.ToString();
-                                //param1.target = node.parentQuest.QuestGiver.Locations[node.parentQuest.locCounter];
+                            {                                
+                                param1.target = node.parentQuest.QuestGiver.Locations[node.parentQuest.locCounter];
                                 node.parentQuest.locCounter++;
                             }
                             else if (param1.type == "Enemy")

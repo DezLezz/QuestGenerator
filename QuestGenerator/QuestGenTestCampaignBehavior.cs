@@ -191,6 +191,7 @@ namespace QuestGenerator
         }
         public class QuestGenTestIssue : IssueBase
         {
+            [SaveableField(115)]
             public Hero missionHero;
 
             public CustomBTNode chosenMission;
@@ -200,12 +201,11 @@ namespace QuestGenerator
             //public List<string> subQuests;
 
             //public int subQuestCounter;
-
             public List<JournalLog> journalLogs = new List<JournalLog>();
 
-            public List<actionTarget> actionsInOrder = new List<actionTarget>();
+            public List<actionTarget> actionsInOrder;
 
-            public List<actionTarget> alternativeActionsInOrder = new List<actionTarget>();
+            public List<actionTarget> alternativeActionsInOrder;
 
             protected override bool IssueQuestCanBeDuplicated {
                 get {
@@ -215,23 +215,43 @@ namespace QuestGenerator
             public QuestGenTestIssue(Hero issueOwner, CustomBTNode chosenMission) : base(issueOwner, CampaignTime.DaysFromNow(200f))
             {
                 this.missionHero = issueOwner;
-
+                this.actionsInOrder = new List<actionTarget>();
                 if (chosenMission.nodeType == CustomBTType.motivation)
                 {
                     this.chosenMission = chosenMission;
+                    this.chosenMission.run(CustomBTStep.actionTarget, (IssueBase)this, this, false);
                     this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
+
                 }
                 else
                 {
                     this.chosenMission = chosenMission.Children[0];
+                    this.chosenMission.run(CustomBTStep.actionTarget, (IssueBase)this, this, false);
                     this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
 
+                    this.alternativeActionsInOrder = new List<actionTarget>();
                     this.alternativeMission = chosenMission.Children[1];
+                    this.alternativeMission.run(CustomBTStep.actionTarget, (IssueBase)this, this, true);
                     this.alternativeMission.run(CustomBTStep.issueQ, (IssueBase)this, this, true);
 
                 }
+
+                saveMissions();
             }
 
+            private void saveMissions()
+            {
+                string id = this.IssueOwner.FirstName.ToString();
+
+                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
+                XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path2, new List<CustomBTNode>() { this.chosenMission });
+
+                if (this.alternativeMission != null)
+                {
+                    string path2_alt = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml";
+                    XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path2_alt, new List<CustomBTNode>() { this.alternativeMission });
+                }
+            }
 
             public override TextObject Title {
                 get {
@@ -324,6 +344,7 @@ namespace QuestGenerator
             protected override QuestBase GenerateIssueQuest(string questId)
             {
                 InformationManager.DisplayMessage(new InformationMessage("Quest Created \n"));
+                this.journalLogs = new List<JournalLog>();
                 foreach (actionTarget aT in actionsInOrder)
                 {
                     this.journalLogs.Add(new JournalLog(this.IssueDueTime, new TextObject(aT.action + "JournalLog", null)));
@@ -348,6 +369,37 @@ namespace QuestGenerator
 
             protected override void OnGameLoad()
             {
+                string id = this.IssueOwner.FirstName.ToString();
+
+                this.actionsInOrder = new List<actionTarget>();
+                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
+                this.chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
+                this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
+
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+
+                    aT.bringTargetsBack();
+                }
+
+                if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + "_alternative" + ".xml"))
+                {
+                    this.alternativeActionsInOrder = new List<actionTarget>();
+                    string path2_alt = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml";
+                    this.alternativeMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2_alt)[0];
+
+                    this.alternativeMission.run(CustomBTStep.issueQ, (IssueBase)this, this, true);
+
+                    for (int i = 0; i < this.alternativeActionsInOrder.Count; i++)
+                    {
+                        var aT = this.alternativeActionsInOrder[i];
+
+                        aT.bringTargetsBack();
+                    }
+                }
+
+
             }
 
         }
@@ -370,13 +422,9 @@ namespace QuestGenerator
             public List<JournalLog> journalLogs;
 
             [SaveableField(114)]
-            public bool alternativeFlag;
+            public bool alternativeFlag = false;
 
             public QuestGenTestQuest alternativeQuest;
-
-            //private JournalLog _gotoQuestLog;
-            //private JournalLog _listenQuestLog;
-            //private JournalLog _reportQuestLog;
 
             internal static void AutoGeneratedStaticCollectObjectsIssueQuest(object o, List<object> collectedObjects)
             {
@@ -417,6 +465,19 @@ namespace QuestGenerator
                 get {
                     TextObject textObject = new TextObject("Timed out quest test.", null);
                     return textObject;
+                }
+            }
+
+            public override bool IsSpecialQuest {
+                get {
+                    if (alternativeFlag)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -541,7 +602,21 @@ namespace QuestGenerator
                         if (qb.StringId == base.StringId + "_alternative")
                         {
                             this.alternativeQuest = (QuestGenTestQuest)qb;
+                            this.alternativeQuest.RegisterEvents();
                             this.alternativeQuest.InitializeQuestOnGameLoad();
+                            using (List<QuestTaskBase>.Enumerator enumerator3 = this.alternativeQuest.TaskList.GetEnumerator())
+                            {
+                                while (enumerator3.MoveNext())
+                                {
+                                    QuestTaskBase questTaskBase = enumerator3.Current;
+                                    if (questTaskBase.IsActive)
+                                    {
+                                        questTaskBase.SetReferences();
+                                        questTaskBase.AddTaskDialogs();
+                                    }
+                                }
+                                continue;
+                            }
                         }
                     }
                 }
@@ -755,14 +830,14 @@ namespace QuestGenerator
 
                 if (alternativeFlag)
                 {
-                    if (quest.StringId + "_alternative" == base.StringId && this.currentActionIndex == this.actionsInOrder.Count) 
+                    if (quest.StringId + "_alternative" == base.StringId) 
                     {
                         this.SuccessConsequences();
                     }
                 }
                 else
                 {
-                    if (quest.StringId.Replace("_alternative", "") == base.StringId && this.currentActionIndex == this.actionsInOrder.Count)
+                    if (quest.StringId.Replace("_alternative", "") == base.StringId)
                     {
                         this.SuccessConsequences();
                     }

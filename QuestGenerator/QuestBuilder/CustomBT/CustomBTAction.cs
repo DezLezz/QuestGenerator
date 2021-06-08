@@ -20,37 +20,40 @@ namespace QuestGenerator.QuestBuilder.CustomBT
 
         public override CustomBTState run(CustomBTStep step, IssueBase issueBase, QuestGenTestIssue questGen, bool alternative)
         {
-            if (step == CustomBTStep.issueQ)
+            if (step == CustomBTStep.actionTarget)
             {
-
-                switch (this.Action.name)
+                if (this.ActionTarget == null)
                 {
-                    case "goto":
-                        this.ActionTarget = new gotoAction(this.Action.name, this.Action);
-                        break;
-                    case "listen":
-                        this.ActionTarget = new listenAction(this.Action.name, this.Action);
-                        break;
-                    case "report":
-                        this.ActionTarget = new reportAction(this.Action.name, this.Action);
-                        break;
-                    case "give":
-                        this.ActionTarget = new giveAction(this.Action.name, this.Action);
-                        break;
-                    case "gather":
-                        this.ActionTarget = new gatherAction(this.Action.name, this.Action);
-                        break;
-                    case "explore":
-                        this.ActionTarget = new exploreAction(this.Action.name, this.Action);
-                        break;
-                    case "quest":
-                        this.ActionTarget = new subquestAction(this.Action.name, this.Action);
-                        this.ActionTarget.children = this.Children;
-                        break;
-                    case "exchange":
-                        this.ActionTarget = new exchangeAction(this.Action.name, this.Action);
-                        break;
+                    switch (this.Action.name)
+                    {
+                        case "goto":
+                            this.ActionTarget = new gotoAction(this.Action.name, this.Action);
+                            break;
+                        case "listen":
+                            this.ActionTarget = new listenAction(this.Action.name, this.Action);
+                            break;
+                        case "report":
+                            this.ActionTarget = new reportAction(this.Action.name, this.Action);
+                            break;
+                        case "give":
+                            this.ActionTarget = new giveAction(this.Action.name, this.Action);
+                            break;
+                        case "gather":
+                            this.ActionTarget = new gatherAction(this.Action.name, this.Action);
+                            break;
+                        case "explore":
+                            this.ActionTarget = new exploreAction(this.Action.name, this.Action);
+                            break;
+                        case "quest":
+                            this.ActionTarget = new subquestAction(this.Action.name, this.Action);
+                            this.ActionTarget.children = this.Children;
+                            break;
+                        case "exchange":
+                            this.ActionTarget = new exchangeAction(this.Action.name, this.Action);
+                            break;
+                    }
                 }
+                
 
                 if (alternative)
                 {
@@ -63,9 +66,12 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                     questGen.actionsInOrder.Add(this.ActionTarget);
                 }
 
-                this.ActionTarget.IssueQ(issueBase, questGen, alternative);
 
                 return CustomBTState.success;
+            }
+            if (step == CustomBTStep.issueQ)
+            {
+                this.ActionTarget.IssueQ(issueBase, questGen, alternative);
             }
             return CustomBTState.success;
         }
