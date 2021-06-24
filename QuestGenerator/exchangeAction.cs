@@ -55,11 +55,11 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.All where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB give"));
+                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 62"));
                 }
                 if (array.Length == 1)
                 {
@@ -71,11 +71,11 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[1].target;
 
-                ItemObject[] array = (from x in ItemObject.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
+                ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB give"));
+                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 78"));
                 }
                 if (array.Length == 1)
                 {
@@ -87,15 +87,31 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[2].target;
 
-                ItemObject[] array = (from x in ItemObject.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
+                ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB give"));
+                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 94"));
                 }
                 if (array.Length == 1)
                 {
                     this.itemTargetGive = array[0];
+                }
+            }
+
+            if (this.questGiver == null)
+            {
+                var setName = this.questGiverString;
+
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+
+                if (array.Length > 1 || array.Length == 0)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 110"));
+                }
+                if (array.Length == 1)
+                {
+                    this.questGiver = array[0];
                 }
             }
         }
@@ -110,24 +126,49 @@ namespace QuestGenerator
                 int i = this.index;
                 if (i > 0)
                 {
-                    if (questGen.actionsInOrder[i - 1].action == "goto")
+                    if (alternative)
                     {
-                        Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
-
-                        newHero = settlement.Notables.GetRandomElement();
-                        targetHero = newHero.Name.ToString();
-                    }
-                    else
-                    {
-                        foreach (Hero hero in questBase.IssueSettlement.Notables)
+                        if (questGen.alternativeActionsInOrder[i - 1].action == "goto")
                         {
-                            if (hero != questGen.IssueOwner)
+                            Settlement settlement = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
+
+                            newHero = settlement.Notables.GetRandomElement();
+                            targetHero = newHero.Name.ToString();
+                        }
+                        else
+                        {
+                            foreach (Hero hero in questBase.IssueSettlement.Notables)
                             {
-                                targetHero = hero.Name.ToString();
-                                newHero = hero;
+                                if (hero != questGen.IssueOwner)
+                                {
+                                    targetHero = hero.Name.ToString();
+                                    newHero = hero;
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        if (questGen.actionsInOrder[i - 1].action == "goto")
+                        {
+                            Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
+
+                            newHero = settlement.Notables.GetRandomElement();
+                            targetHero = newHero.Name.ToString();
+                        }
+                        else
+                        {
+                            foreach (Hero hero in questBase.IssueSettlement.Notables)
+                            {
+                                if (hero != questGen.IssueOwner)
+                                {
+                                    targetHero = hero.Name.ToString();
+                                    newHero = hero;
+                                }
+                            }
+                        }
+                    }
+                                        
                 }
 
                 else if (i == 0)
@@ -167,7 +208,7 @@ namespace QuestGenerator
                 ItemObject newItem = new ItemObject();
                 string itemNumb = this.Action.param[1].target;
                 int amount = 0;
-                var itemList = (from x in ItemObject.AllTradeGoods select x).ToList<ItemObject>();
+                var itemList = (from x in Items.AllTradeGoods select x).ToList<ItemObject>();
 
                 int r = rnd.Next(itemList.Count());
 
@@ -264,7 +305,7 @@ namespace QuestGenerator
             if (this.heroTarget != null)
             {
                 questBase.AddTrackedObject(this.heroTarget);
-                Campaign.Current.ConversationManager.AddDialogFlow(this.GetExchangeActionDialogFlow(this.heroTarget, index, questBase.QuestGiver, questBase, questGen), this);
+                Campaign.Current.ConversationManager.AddDialogFlow(this.GetExchangeActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
 
                 TextObject textObject = new TextObject("Get {ITEM_AMOUNT} {ITEM_NAME} to exchange with {HERO}", null);
                 textObject.SetTextVariable("HERO", this.heroTarget.Name);
@@ -274,7 +315,7 @@ namespace QuestGenerator
                 if (currentItemProgress < this.itemAmountGive)
                 {
                     TextObject textObject1 = new TextObject("You have enough items to complete the quest.", null);
-                    textObject1.SetTextVariable("QUEST_SETTLEMENT", questBase.QuestGiver.CurrentSettlement.Name);
+                    textObject1.SetTextVariable("QUEST_SETTLEMENT", this.questGiver.CurrentSettlement.Name);
                     InformationManager.AddQuickInformation(textObject1, 0, null, "");
                     questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, currentItemProgress, this.itemAmountGive, null, false);
                 }
@@ -305,7 +346,7 @@ namespace QuestGenerator
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            return GetExchangeActionDialogFlow(this.heroTarget, index, questGiver, questBase, questGen);
+            return GetExchangeActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen);
         }
 
         private DialogFlow GetExchangeActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
@@ -329,19 +370,22 @@ namespace QuestGenerator
 
         private void exchangeConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            questGen.currentActionIndex++;
-            questGen.UpdateQuestTaskS(questGen.journalLogs[index], 1);
-
-            GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTargetGive, this.itemAmountGive);
-            GiveItemAction.ApplyForParties(Settlement.CurrentSettlement.Party, PartyBase.MainParty, this.itemTargetReceive, this.itemAmountReceive);
-
-            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+            if (!questGen.journalLogs[this.index].HasBeenCompleted())
             {
-                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
-            }
-            else
-            {
-                questGen.SuccessConsequences();
+                questGen.currentActionIndex++;
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+
+                GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTargetGive, this.itemAmountGive);
+                GiveItemAction.ApplyForParties(Settlement.CurrentSettlement.Party, PartyBase.MainParty, this.itemTargetReceive, this.itemAmountReceive);
+
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                {
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                }
+                else
+                {
+                    questGen.SuccessConsequences();
+                }
             }
         }
 
@@ -522,7 +566,7 @@ namespace QuestGenerator
 
         }
 
-        public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, bool flag2, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
             bool flag = false;
             int amountRemaining = this.itemAmountGive;

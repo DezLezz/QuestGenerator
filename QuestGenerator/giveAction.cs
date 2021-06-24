@@ -66,11 +66,11 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.All where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB give"));
+                    InformationManager.DisplayMessage(new InformationMessage("give action - line 73"));
                 }
                 if (array.Length == 1)
                 {
@@ -82,17 +82,33 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[1].target;
 
-                ItemObject[] array = (from x in ItemObject.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
+                ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB give"));
+                    InformationManager.DisplayMessage(new InformationMessage("give action - line 89"));
                 }
                 if (array.Length == 1)
                 {
                     this.itemTarget = array[0];
                 }
 
+            }
+
+            if (this.questGiver == null)
+            {
+                var setName = this.questGiverString;
+
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+
+                if (array.Length > 1 || array.Length == 0)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("listen action - line 106"));
+                }
+                if (array.Length == 1)
+                {
+                    this.questGiver = array[0];
+                }
             }
         }
         public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
@@ -105,24 +121,50 @@ namespace QuestGenerator
                 int i = this.index;
                 if (i > 0)
                 {
-                    if (questGen.actionsInOrder[i - 1].action == "goto")
+                    if (alternative)
                     {
-                        Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
-
-                        newHero = settlement.Notables.GetRandomElement();
-                        targetHero = newHero.Name.ToString();
-                    }
-                    else
-                    {
-                        foreach (Hero hero in questBase.IssueSettlement.Notables)
+                        if (questGen.alternativeActionsInOrder[i - 1].action == "goto")
                         {
-                            if (hero != questGen.IssueOwner)
+                            Settlement settlement = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
+
+                            newHero = settlement.Notables.GetRandomElement();
+                            targetHero = newHero.Name.ToString();
+                        }
+                        else
+                        {
+                            foreach (Hero hero in questBase.IssueSettlement.Notables)
                             {
-                                targetHero = hero.Name.ToString();
-                                newHero = hero;
+                                if (hero != questGen.IssueOwner)
+                                {
+                                    targetHero = hero.Name.ToString();
+                                    newHero = hero;
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        if (questGen.actionsInOrder[i - 1].action == "goto")
+                        {
+                            Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
+
+                            newHero = settlement.Notables.GetRandomElement();
+                            targetHero = newHero.Name.ToString();
+                        }
+                        else
+                        {
+                            foreach (Hero hero in questBase.IssueSettlement.Notables)
+                            {
+                                if (hero != questGen.IssueOwner)
+                                {
+                                    targetHero = hero.Name.ToString();
+                                    newHero = hero;
+                                }
+                            }
+                        }
+                    }
+
+                    
                 }
 
                 else if (i == 0)
@@ -200,7 +242,7 @@ namespace QuestGenerator
             if (this.heroTarget != null)
             {
                 questBase.AddTrackedObject(this.heroTarget);
-                Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(this.heroTarget, index, questBase.QuestGiver, questBase, questGen), this);
+                Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
 
                 TextObject textObject = new TextObject("Get {ITEM_AMOUNT} {ITEM_NAME} to give to {HERO}", null);
                 textObject.SetTextVariable("HERO", this.heroTarget.Name);
@@ -210,7 +252,7 @@ namespace QuestGenerator
                 if (currentItemProgress < this.itemAmount)
                 {
                     TextObject textObject1 = new TextObject("You have enough items to complete the quest.", null);
-                    textObject1.SetTextVariable("QUEST_SETTLEMENT", questBase.QuestGiver.CurrentSettlement.Name);
+                    textObject1.SetTextVariable("QUEST_SETTLEMENT", this.questGiver.CurrentSettlement.Name);
                     InformationManager.AddQuickInformation(textObject1, 0, null, "");
                     questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, currentItemProgress, this.itemAmount, null, false);
                 }
@@ -229,7 +271,7 @@ namespace QuestGenerator
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            return GetGiveActionDialogFlow(this.heroTarget, index, questGiver, questBase, questGen);
+            return GetGiveActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen);
         }
 
         private DialogFlow GetGiveActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
@@ -251,19 +293,22 @@ namespace QuestGenerator
 
         private void giveConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            questGen.currentActionIndex++;
-
-            questGen.UpdateQuestTaskS(questGen.journalLogs[index], 1);
-
-            GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTarget, this.itemAmount);
-
-            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+            if (!questGen.journalLogs[this.index].HasBeenCompleted())
             {
-                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
-            }
-            else
-            {
-                questGen.SuccessConsequences();
+                questGen.currentActionIndex++;
+
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+
+                GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTarget, this.itemAmount);
+
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                {
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                }
+                else
+                {
+                    questGen.SuccessConsequences();
+                }
             }
         }
 

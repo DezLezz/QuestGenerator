@@ -51,7 +51,22 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                         case "exchange":
                             this.ActionTarget = new exchangeAction(this.Action.name, this.Action);
                             break;
+                        case "capture":
+                            this.ActionTarget = new captureAction(this.Action.name, this.Action);
+                            break;
+                        case "kill":
+                            this.ActionTarget = new killAction(this.Action.name, this.Action);
+                            break;
+                        case "free":
+                            this.ActionTarget = new freeAction(this.Action.name, this.Action);
+                            break;
+                        case "take":
+                            this.ActionTarget = new takeAction(this.Action.name, this.Action);
+                            break;
                     }
+
+                    this.ActionTarget.questGiver = issueBase.IssueOwner;
+                    this.ActionTarget.questGiverString = issueBase.IssueOwner.Name.ToString();
                 }
                 
 

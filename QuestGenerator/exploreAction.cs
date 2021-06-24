@@ -55,7 +55,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB goto"));
+                    InformationManager.DisplayMessage(new InformationMessage("explore action - line 58"));
                 }
                 if (array.Length == 1)
                 {
@@ -69,7 +69,7 @@ namespace QuestGenerator
 
                     if (array1.Length > 1 || array1.Length == 0)
                     {
-                        InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB goto"));
+                        InformationManager.DisplayMessage(new InformationMessage("explore action - line 72"));
                     }
                     if (array1.Length == 1)
                     {
@@ -77,6 +77,21 @@ namespace QuestGenerator
                     }
                 }
 
+            }
+            if (this.questGiver == null)
+            {
+                var setName = this.questGiverString;
+
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+
+                if (array.Length > 1 || array.Length == 0)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("explore action - line 89"));
+                }
+                if (array.Length == 1)
+                {
+                    this.questGiver = array[0];
+                }
             }
         }
 
@@ -168,21 +183,22 @@ namespace QuestGenerator
                 this.settlementsToVisitTags[i] = "yes";
                 InformationManager.DisplayMessage(new InformationMessage("Settlement Reached"));
                 this.settlementsVisited++;
-                questGen.UpdateQuestTaskS(questGen.journalLogs[questGen.currentActionIndex], this.settlementsVisited);
-
-                if (this.settlementsVisited == this.NumberOfSettlementsToVisit)
+                if (!questGen.journalLogs[this.index].HasBeenCompleted())
                 {
-                    questGen.currentActionIndex++;
+                    questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], this.settlementsVisited);
+                    if (this.settlementsVisited == this.NumberOfSettlementsToVisit)
+                    {
+                        questGen.currentActionIndex++;
+                    }
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                    {
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                    }
+                    else
+                    {
+                        questGen.SuccessConsequences();
+                    }
                 }
-            }
-
-            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
-            {
-                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
-            }
-            else
-            {
-                questGen.SuccessConsequences();
             }
 
         }

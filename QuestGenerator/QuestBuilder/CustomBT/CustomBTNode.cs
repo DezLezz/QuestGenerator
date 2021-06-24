@@ -21,6 +21,8 @@ namespace QuestGenerator.QuestBuilder.CustomBT
 
         public string name { get; set; }
 
+        public string info { get; set; }
+
         public CustomBTType nodeType { get; set; }
 
         [XmlIgnore]

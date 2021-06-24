@@ -18,7 +18,7 @@ namespace QuestGenerator
                 EquipmentElement equipmentElement = new EquipmentElement(craftingMaterialItem3);
                 itemRefined = true;
                 refineFormulaS = refineFormula;
-                Campaign.Current.CampaignEvents.OnEquipmentSmeltedByHero(hero, equipmentElement);
+                CampaignEventDispatcher.Instance.OnEquipmentSmeltedByHero(hero, equipmentElement);
             }
             if (refineFormula.Output2Count > 0)
             {
@@ -26,7 +26,7 @@ namespace QuestGenerator
                 EquipmentElement equipmentElement = new EquipmentElement(craftingMaterialItem4);
                 itemRefined = true;
                 refineFormulaS = refineFormula;
-                Campaign.Current.CampaignEvents.OnEquipmentSmeltedByHero(hero, equipmentElement);
+                CampaignEventDispatcher.Instance.OnEquipmentSmeltedByHero(hero, equipmentElement);
             }
         }
 

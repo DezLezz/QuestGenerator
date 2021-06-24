@@ -4,6 +4,7 @@ using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.Localization;
 using QuestGenerator.QuestBuilder;
+using System;
 
 namespace QuestGenerator
 {
@@ -29,12 +30,12 @@ namespace QuestGenerator
         {
             base.OnSubModuleLoad();
             new Harmony("QuestGenerator").PatchAll();
-
+            ValueTuple<bool, TextObject> reason = new ValueTuple<bool, TextObject>(false, new TextObject());
             Module.CurrentModule.AddInitialStateOption(new InitialStateOption("GenerateOneQuest", new TextObject("Generate one quest (debug purposes)", null), 9990, () => {
                 var gen = new Generator(0);
                 gen.GenerateOne();
                 InformationManager.DisplayMessage(new InformationMessage("Quest Generated"));
-            }, () => false));
+            }, () => reason));
 
         }
 

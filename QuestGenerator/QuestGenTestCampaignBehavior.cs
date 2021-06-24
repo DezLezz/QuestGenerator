@@ -32,7 +32,7 @@ namespace QuestGenerator
         private List<CustomBTNode> missions;
 
         private CustomBTNode chosenMission;
-
+        float lasttime = 0;
         static Random rnd = new Random();
 
         //[SaveableField(103)]
@@ -64,6 +64,7 @@ namespace QuestGenerator
             if (Input.IsKeyDown(InputKey.G))
             {
                 QuestGen.GenerateOne();
+                lasttime = f;
             }
         }
 
@@ -74,7 +75,7 @@ namespace QuestGenerator
             {
 
                 List<string> motivations = new List<string>() { "Knowledge", "Comfort", "Reputation", "Serenity", "Protection", "Conquest", "Wealth", "Ability", "Equipment" };
-                var heroList = Hero.All;
+                var heroList = Hero.AllAliveHeroes;
 
                 foreach (Hero h in heroList)
                 {
@@ -99,7 +100,9 @@ namespace QuestGenerator
         {
 
             PotentialIssueData potentialIssueData = pid;
-            InformationManager.DisplayMessage(new InformationMessage("Issue Created for hero " + issueOwner.Name.ToString()));
+            string place = "";
+            if (issueOwner.CurrentSettlement != null) place = issueOwner.CurrentSettlement.Name.ToString();
+            InformationManager.DisplayMessage(new InformationMessage("Issue Created for hero " + issueOwner.Name.ToString() + "," + place));
             string motiv = "none";
 
             foreach (Hero h in HeroMotivations.Keys)
@@ -130,7 +133,16 @@ namespace QuestGenerator
         {
             string motiv = "none";
 
-            motiv = HeroMotivations[issueGiver];
+            if (HeroMotivations.ContainsKey(issueGiver))
+            {
+                motiv = HeroMotivations[issueGiver];
+            }
+            else
+            {
+                List<string> motivations = new List<string>() { "Knowledge", "Comfort", "Reputation", "Serenity", "Protection", "Conquest", "Wealth", "Ability", "Equipment" };
+                int r = rnd.Next(motivations.Count);
+                HeroMotivations.Add(issueGiver, motivations[r]);
+            }
 
             if (this.missions.IsEmpty())
             {
@@ -194,6 +206,9 @@ namespace QuestGenerator
             [SaveableField(115)]
             public Hero missionHero;
 
+            [SaveableField(116)]
+            public int id = 0;
+
             public CustomBTNode chosenMission;
 
             public CustomBTNode alternativeMission;
@@ -241,9 +256,17 @@ namespace QuestGenerator
 
             private void saveMissions()
             {
-                string id = this.IssueOwner.FirstName.ToString();
+                int r = rnd.Next(1, 9999999);
+                this.id = r;
+                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + ".xml";
 
-                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
+                while (File.Exists(path2))
+                {
+                    r = rnd.Next(1, 9999999);
+                    this.id = r;
+                    path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + ".xml";
+                }
+
                 XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path2, new List<CustomBTNode>() { this.chosenMission });
 
                 if (this.alternativeMission != null)
@@ -258,59 +281,63 @@ namespace QuestGenerator
                     TextObject textObject;
                     if (chosenMission.nodeType == CustomBTType.motivation)
                     {
-                        textObject = new TextObject(this.chosenMission.name, null);
+                        textObject = new TextObject(this.chosenMission.name + ": " + this.chosenMission.info, null);
                     }
                     else
                     {
-                        textObject = new TextObject(this.chosenMission.Children[0].name, null);
+                        textObject = new TextObject(this.chosenMission.Children[0].name + ": " + this.chosenMission.Children[0].info, null);
                     }
                     return textObject;
                 }
             }
             public override TextObject Description {
                 get {
-                    string textObject = "";
-                    foreach (actionTarget aT in actionsInOrder)
+                    TextObject textObject;
+                    if (chosenMission.nodeType == CustomBTType.motivation)
                     {
-                        textObject += aT.action ;
+                        textObject = new TextObject(this.chosenMission.info, null);
                     }
-                    return new TextObject(textObject, null);
+                    else
+                    {
+                        textObject = new TextObject(this.chosenMission.Children[0].info, null);
+                    }
+                    return textObject;
                 }
             }
-            protected override TextObject IssueBriefByIssueGiver {
+            public override TextObject IssueBriefByIssueGiver {
                 get {
                     string textObject = "";
                     foreach (actionTarget aT in actionsInOrder)
                     {
-                        textObject += aT.action ;
+                        textObject += aT.action + ", ";
                     }
                     return new TextObject(textObject, null);
                 }
             }
 
-            protected override TextObject IssueAcceptByPlayer {
+            public override TextObject IssueAcceptByPlayer {
                 get {
                     return new TextObject("IssueAcceptByPlayer", null);
                 }
             }
-            protected override TextObject IssueQuestSolutionExplanationByIssueGiver {
+            public override TextObject IssueQuestSolutionExplanationByIssueGiver {
                 get {
 
                     return new TextObject("IssueQuestSolutionExplanationByIssueGiver", null);
                 }
             }
-            protected override TextObject IssueQuestSolutionAcceptByPlayer {
+            public override TextObject IssueQuestSolutionAcceptByPlayer {
                 get {
                     return new TextObject("IssueQuestSolutionAcceptByPlayer", null);
                 }
             }
-            protected override bool IsThereAlternativeSolution {
+            public override bool IsThereAlternativeSolution {
                 get {
                     return false;
                 }
             }
 
-            protected override bool IsThereLordSolution {
+            public override bool IsThereLordSolution {
                 get {
                     return false;
                 }
@@ -337,7 +364,6 @@ namespace QuestGenerator
 
             protected override void CompleteIssueWithTimedOutConsequences()
             {
-                throw new NotImplementedException();
             }
 
 
@@ -369,10 +395,8 @@ namespace QuestGenerator
 
             protected override void OnGameLoad()
             {
-                string id = this.IssueOwner.FirstName.ToString();
-
                 this.actionsInOrder = new List<actionTarget>();
-                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
+                string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + ".xml";
                 this.chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
                 this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
 
@@ -383,10 +407,10 @@ namespace QuestGenerator
                     aT.bringTargetsBack();
                 }
 
-                if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + "_alternative" + ".xml"))
+                if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + "_alternative" + ".xml"))
                 {
                     this.alternativeActionsInOrder = new List<actionTarget>();
-                    string path2_alt = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml";
+                    string path2_alt = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + "_alternative" + ".xml";
                     this.alternativeMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2_alt)[0];
 
                     this.alternativeMission.run(CustomBTStep.issueQ, (IssueBase)this, this, true);
@@ -449,7 +473,8 @@ namespace QuestGenerator
 
             public override TextObject Title {
                 get {
-                    TextObject textObject = new TextObject(this.chosenMission.name, null);
+                    TextObject textObject = new TextObject(this.chosenMission.name + ": " +this.chosenMission.info, null);
+                    if (alternativeFlag) textObject = new TextObject(textObject.ToString() + " alternative path given by " + this.actionsInOrder[0].questGiver.Name.ToString() , null);
                     return textObject;
                 }
             }
@@ -492,7 +517,6 @@ namespace QuestGenerator
                 if (!alternative)
                 {
                     this.alternativeQuest = alternativeReference;
-                    this.missionHero.AddEventForOccupiedHero(base.StringId);
                 }
 
                 this.SetDialogs();
@@ -521,28 +545,14 @@ namespace QuestGenerator
                 for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
                     var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
 
-                        case "listen":
-                            Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
-                            break;
-                        case "report":
-                            Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
-                            break;
-                        case "give":
-                            if (aT.GetHeroTarget() != null)
-                            {
-                                Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
-                            }
-                            break;
-                        case "exchange":
-                            if (aT.GetHeroTarget() != null)
-                            {
-                                Campaign.Current.ConversationManager.AddDialogFlow(aT.getDialogFlows(i, this.missionHero, (QuestBase)this, this), this);
-                            }
-                            break;
+                    DialogFlow d = aT.getDialogFlows(i, null, (QuestBase)this, this);
+
+                    if (d != null)
+                    {
+                        Campaign.Current.ConversationManager.AddDialogFlow(d, this);
                     }
+
                 }
 
             }
@@ -669,9 +679,15 @@ namespace QuestGenerator
                 CampaignEvents.OnPartyConsumedFoodEvent.AddNonSerializedListener(this, new Action<MobileParty>(this.OnPartyConsumedFood));
                 CampaignEvents.OnHeroSharedFoodWithAnotherHeroEvent.AddNonSerializedListener(this, new Action<Hero, Hero, float>(this.OnHeroSharedFoodWithAnotherHero));
                 CampaignEvents.OnEquipmentSmeltedByHeroEvent.AddNonSerializedListener(this, new Action<Hero, EquipmentElement>(this.OnEquipmentSmeltedByHeroEvent));
-                CampaignEvents.OnNewItemCraftedEvent.AddNonSerializedListener(this, new Action<ItemObject, Crafting.OverrideData>(this.OnNewItemCraftedEvent));
+                CampaignEvents.OnNewItemCraftedEvent.AddNonSerializedListener(this, new Action<ItemObject, Crafting.OverrideData, bool>(this.OnNewItemCraftedEvent));
                 CampaignEvents.OnItemProducedEvent.AddNonSerializedListener(this, new Action<ItemObject, Settlement, int>(this.OnItemProducedEvent));
                 CampaignEvents.OnQuestCompletedEvent.AddNonSerializedListener(this, new Action<QuestBase, QuestCompleteDetails>(this.OnQuestCompletedEvent));
+                CampaignEvents.OnPrisonerTakenEvent.AddNonSerializedListener(this, new Action<FlattenedTroopRoster>(this.OnPrisonerTakenEvent));
+                CampaignEvents.HeroPrisonerTaken.AddNonSerializedListener(this, new Action<PartyBase, Hero>(this.HeroPrisonerTaken));
+                CampaignEvents.HeroKilledEvent.AddNonSerializedListener(this, new Action<Hero, Hero, KillCharacterAction.KillCharacterActionDetail, bool>(this.HeroKilledEvent));
+                CampaignEvents.MapEventEnded.AddNonSerializedListener(this, new Action<MapEvent>(this.MapEventEnded));
+                CampaignEvents.HeroPrisonerReleased.AddNonSerializedListener(this, new Action<Hero, PartyBase, IFaction, EndCaptivityDetail>(this.HeroPrisonerReleased));
+                CampaignEvents.PrisonersChangeInSettlement.AddNonSerializedListener(this, new Action<Settlement, FlattenedTroopRoster, Hero, bool>(this.PrisonersChangeInSettlement));
                 //CampaignEvents.OnSettlementLeftEvent.AddNonSerializedListener(this, new Action<MobileParty, Settlement>(this.OnSettlementLeft));
                 //CampaignEvents.MapEventEnded.AddNonSerializedListener(this, new Action<MapEvent>(this.OnMapEventEnded));
                 //CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, new Action(this.OnDailyTick));
@@ -779,10 +795,7 @@ namespace QuestGenerator
                                 break;
 
                             case "exchange":
-                                if (aT.GetHeroTarget() != null)
-                                {
-                                    aT.OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
-                                }
+                                aT.OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
                                 break;
                         }
 
@@ -790,7 +803,7 @@ namespace QuestGenerator
                 }
             }
 
-            private void OnNewItemCraftedEvent(ItemObject item, Crafting.OverrideData crafted)
+            private void OnNewItemCraftedEvent(ItemObject item, Crafting.OverrideData crafted, bool flag)
             {
                 for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
@@ -798,13 +811,10 @@ namespace QuestGenerator
                     switch (aT.action)
                     {
                         case "gather":
-                            aT.OnNewItemCraftedEventQuest(item, crafted, i, this, (QuestBase)this);
+                            aT.OnNewItemCraftedEventQuest(item, crafted, flag, i, this, (QuestBase)this);
                             break;
                         case "exchange":
-                            if (aT.GetHeroTarget() != null)
-                            {
-                                aT.OnNewItemCraftedEventQuest(item, crafted, i, this, (QuestBase)this);
-                            }
+                            aT.OnNewItemCraftedEventQuest(item, crafted, flag, i, this, (QuestBase)this);
                             break;
                     }
                 }
@@ -840,6 +850,100 @@ namespace QuestGenerator
                     if (quest.StringId.Replace("_alternative", "") == base.StringId)
                     {
                         this.SuccessConsequences();
+                    }
+                }
+            }
+
+            private void OnPrisonerTakenEvent(FlattenedTroopRoster rooster)
+            {
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+                    switch (aT.action)
+                    {
+                        case "capture":
+                            aT.OnPrisonerTakenEvent(rooster, i, this, (QuestBase)this);
+                            break;
+                    }
+                }
+            }
+
+            private void HeroPrisonerTaken(PartyBase capturer, Hero prisoner)
+            {
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+                    switch (aT.action)
+                    {
+                        case "capture":
+                            aT.HeroPrisonerTaken(capturer, prisoner, i, this, (QuestBase)this);
+                            break;
+                    }
+                }
+            }
+
+            private void HeroKilledEvent(Hero victim, Hero killer, KillCharacterAction.KillCharacterActionDetail detail, bool showNotification = true)
+            {
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+                    switch (aT.action)
+                    {
+                        case "capture":
+                            aT.HeroKilledEvent(victim, killer, detail, showNotification, i, this, (QuestBase)this);
+                            break;
+                        case "kill":
+                            aT.HeroKilledEvent(victim, killer, detail, showNotification, i, this, (QuestBase)this);
+                            break;
+                    }
+                }
+            }
+
+            private void MapEventEnded(MapEvent mapEvent)
+            {
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+                    switch (aT.action)
+                    {
+                        case "kill":
+                            aT.MapEventEnded(mapEvent, i, this, (QuestBase)this);
+                            break;
+                        case "take":
+                            aT.MapEventEnded(mapEvent, i, this, (QuestBase)this);
+                            break;
+                    }
+                }
+            }
+            
+            private void HeroPrisonerReleased (Hero prisoner, PartyBase party, IFaction capturerFaction, EndCaptivityDetail detail)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(prisoner.Name.ToString()));
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+                    switch (aT.action)
+                    {
+                        case "capture":
+                            aT.HeroPrisonerReleased(prisoner, party, capturerFaction, detail, i, this, (QuestBase)this);
+                            break;
+                        case "free":
+                            aT.HeroPrisonerReleased(prisoner, party, capturerFaction, detail, i, this, (QuestBase)this);
+                            break;
+                    }
+                }
+            }
+
+            private void PrisonersChangeInSettlement(Settlement settlement, FlattenedTroopRoster prisonerRoster, Hero prisonerHero, bool isReleased)
+            {
+                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                {
+                    var aT = this.actionsInOrder[i];
+                    switch (aT.action)
+                    {
+                        case "free":
+                            aT.PrisonersChangeInSettlement(settlement, prisonerRoster, prisonerHero, isReleased, i, this, (QuestBase)this);
+                            break;
                     }
                 }
             }

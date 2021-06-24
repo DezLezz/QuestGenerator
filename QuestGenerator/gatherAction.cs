@@ -68,11 +68,11 @@ namespace QuestGenerator
                 var setName = this.Action.param[0].target;
                 InformationManager.DisplayMessage(new InformationMessage(setName));
 
-                ItemObject[] array = (from x in ItemObject.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
+                ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB gather"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - 75"));
                 }
                 if (array.Length == 1)
                 {
@@ -89,11 +89,26 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB gather"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 92"));
                 }
                 if (array.Length == 1)
                 {
                     this.settlementTarget = array[0];
+                }
+            }
+            if (this.questGiver == null)
+            {
+                var setName = this.questGiverString;
+
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+
+                if (array.Length > 1 || array.Length == 0)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 107"));
+                }
+                if (array.Length == 1)
+                {
+                    this.questGiver = array[0];
                 }
             }
         }
@@ -108,92 +123,185 @@ namespace QuestGenerator
                 int i = this.index;
                 if (i > 0)
                 {
-                    if (questGen.actionsInOrder[i - 1].action == "goto")
+                    if (alternative)
                     {
-
-                        var itemList = ItemObject.AllTradeGoods;
-
-                        int r = rnd.Next(itemList.Count());
-
-                        newItem = itemList.ElementAt(r);
-
-                        if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
+                        if (questGen.alternativeActionsInOrder[i - 1].action == "goto")
                         {
-                            amount = rnd.Next(1, 10);
-                            this.SetItemAmount(amount);
-                        }
-                        else
-                        {
-                            this.SetItemAmount(1);
-                        }
 
-                        Settlement settlement = questGen.actionsInOrder[i -1].GetSettlementTarget();
+                            var itemList = Items.AllTradeGoods;
 
-                        Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
-                        {
-                            float num;
-                            bool flag = false;
-                            foreach (ItemRosterElement iR in x.ItemRoster)
+                            int r = rnd.Next(itemList.Count());
+
+                            newItem = itemList.ElementAt(r);
+
+                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
                             {
-                                if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
-                                {
-                                    flag = true;
-                                    break;
-                                }
+                                amount = rnd.Next(1, 10);
+                                this.SetItemAmount(amount);
+                            }
+                            else
+                            {
+                                this.SetItemAmount(1);
                             }
 
-                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, settlement, 1500f, out num) && flag;
-                        });
+                            Settlement settlement = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
 
-                        if (settlement != null)
-                        {
-                            this.settlementStringTarget = settlement.Name.ToString();
+                            Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
+                            {
+                                float num;
+                                bool flag = false;
+                                foreach (ItemRosterElement iR in x.ItemRoster)
+                                {
+                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+
+                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, settlement, 1500f, out num) && flag;
+                            });
+
+                            if (settlement != null)
+                            {
+                                this.settlementStringTarget = settlement.Name.ToString();
+                            }
+
+                            this.SetSettlementTarget(settlement);
                         }
 
-                        this.SetSettlementTarget(settlement);
-                    }
+                        else
+                        {
 
+                            var itemList = Items.AllTradeGoods;
+
+                            int r = rnd.Next(itemList.Count());
+
+                            newItem = itemList.ElementAt(r);
+
+                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
+                            {
+                                amount = rnd.Next(1, 10);
+                                this.SetItemAmount(amount);
+                            }
+                            else
+                            {
+                                this.SetItemAmount(1);
+                            }
+
+                            Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
+                            {
+                                float num;
+                                bool flag = false;
+                                foreach (ItemRosterElement iR in x.ItemRoster)
+                                {
+                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+
+                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
+                            });
+
+                            if (settlement != null)
+                            {
+                                this.settlementStringTarget = settlement.Name.ToString();
+                            }
+
+                            this.SetSettlementTarget(settlement);
+                        }
+                    }
                     else
                     {
-
-                        var itemList = ItemObject.AllTradeGoods;
-
-                        int r = rnd.Next(itemList.Count());
-
-                        newItem = itemList.ElementAt(r);
-
-                        if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
+                        if (questGen.actionsInOrder[i - 1].action == "goto")
                         {
-                            amount = rnd.Next(1, 10);
-                            this.SetItemAmount(amount);
-                        }
-                        else
-                        {
-                            this.SetItemAmount(1);
-                        }
 
-                        Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
-                        {
-                            float num;
-                            bool flag = false;
-                            foreach (ItemRosterElement iR in x.ItemRoster)
+                            var itemList = Items.AllTradeGoods;
+
+                            int r = rnd.Next(itemList.Count());
+
+                            newItem = itemList.ElementAt(r);
+
+                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
                             {
-                                if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
-                                {
-                                    flag = true;
-                                    break;
-                                }
+                                amount = rnd.Next(1, 10);
+                                this.SetItemAmount(amount);
+                            }
+                            else
+                            {
+                                this.SetItemAmount(1);
                             }
 
-                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
-                        });
+                            Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
 
-                        if (settlement != null)
-                        {
-                            this.settlementStringTarget = settlement.Name.ToString();
+                            Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
+                            {
+                                float num;
+                                bool flag = false;
+                                foreach (ItemRosterElement iR in x.ItemRoster)
+                                {
+                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+
+                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, settlement, 1500f, out num) && flag;
+                            });
+
+                            if (settlement != null)
+                            {
+                                this.settlementStringTarget = settlement.Name.ToString();
+                            }
+
+                            this.SetSettlementTarget(settlement);
                         }
 
-                        this.SetSettlementTarget(settlement);
+                        else
+                        {
+
+                            var itemList = Items.AllTradeGoods;
+
+                            int r = rnd.Next(itemList.Count());
+
+                            newItem = itemList.ElementAt(r);
+
+                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
+                            {
+                                amount = rnd.Next(1, 10);
+                                this.SetItemAmount(amount);
+                            }
+                            else
+                            {
+                                this.SetItemAmount(1);
+                            }
+
+                            Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
+                            {
+                                float num;
+                                bool flag = false;
+                                foreach (ItemRosterElement iR in x.ItemRoster)
+                                {
+                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+
+                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
+                            });
+
+                            if (settlement != null)
+                            {
+                                this.settlementStringTarget = settlement.Name.ToString();
+                            }
+
+                            this.SetSettlementTarget(settlement);
+                        }
                     }
                 }
 
@@ -202,7 +310,7 @@ namespace QuestGenerator
                 else if (i == 0)
                 {
 
-                    var itemList = ItemObject.AllTradeGoods;
+                    var itemList = Items.AllTradeGoods;
 
                     int r = rnd.Next(itemList.Count());
 
@@ -439,7 +547,7 @@ namespace QuestGenerator
 
         }
 
-        public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, bool flag2, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
             bool flag = false;
             int amountRemaining = this.GetItemAmount();
@@ -456,20 +564,25 @@ namespace QuestGenerator
             {
                 amountRemaining -= amountPurchased;
                 this.SetItemAmount(amountRemaining);
-                questGen.UpdateQuestTaskS(questGen.journalLogs[index], questGen.journalLogs[index].CurrentProgress + amountPurchased);
+                
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], questGen.journalLogs[this.index].CurrentProgress + amountPurchased);
+                
             }
 
             if (amountRemaining <= 0)
             {
-                questGen.currentActionIndex++;
+                if (!questGen.journalLogs[this.index].HasBeenCompleted())
+                {
+                    questGen.currentActionIndex++;
 
-                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
-                {
-                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
-                }
-                else
-                {
-                    questGen.SuccessConsequences();
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                    {
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                    }
+                    else
+                    {
+                        questGen.SuccessConsequences();
+                    }
                 }
             }
         }

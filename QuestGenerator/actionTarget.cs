@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
+using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.Core;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using static TaleWorlds.CampaignSystem.QuestBase;
@@ -11,13 +12,19 @@ namespace QuestGenerator
 {
     [XmlInclude(typeof(gotoAction)), XmlInclude(typeof(giveAction)), XmlInclude(typeof(gatherAction)), 
         XmlInclude(typeof(exchangeAction)), XmlInclude(typeof(exploreAction)), XmlInclude(typeof(listenAction)), 
-        XmlInclude(typeof(reportAction)), XmlInclude(typeof(subquestAction))]
+        XmlInclude(typeof(reportAction)), XmlInclude(typeof(subquestAction)), XmlInclude(typeof(captureAction))
+        , XmlInclude(typeof(killAction)), XmlInclude(typeof(freeAction)), XmlInclude(typeof(takeAction))]
     public abstract class actionTarget
     {
         public string action;
 
         public int index;
         public List<CustomBTNode> children;
+
+        [XmlIgnore]
+        public Hero questGiver;
+
+        public string questGiverString;
 
         public QuestGenerator.QuestBuilder.Action Action { get; set; }
 
@@ -100,7 +107,7 @@ namespace QuestGenerator
 
         }
 
-        public virtual void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        public virtual void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, bool flag, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
 
         }
@@ -114,6 +121,34 @@ namespace QuestGenerator
         {
 
         }
+        public virtual void OnPrisonerTakenEvent(FlattenedTroopRoster rooster, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
 
+        }
+
+        public virtual void HeroPrisonerTaken(PartyBase capturer, Hero prisoner, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void HeroKilledEvent(Hero victim, Hero killer, KillCharacterAction.KillCharacterActionDetail detail, bool showNotification, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void MapEventEnded(MapEvent mapEvent, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void HeroPrisonerReleased(Hero prisoner, PartyBase party, IFaction capturerFaction, EndCaptivityDetail detail, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void PrisonersChangeInSettlement(Settlement settlement, FlattenedTroopRoster prisonerRoster, Hero prisonerHero, bool isReleased, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
     }
 }

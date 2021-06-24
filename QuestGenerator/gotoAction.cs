@@ -42,11 +42,26 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Everything is on fire BTB goto"));
+                    InformationManager.DisplayMessage(new InformationMessage("goto action - line 45"));
                 }
                 if (array.Length == 1)
                 {
                     this.settlementTarget = array[0];
+                }
+            }
+            if (this.questGiver == null)
+            {
+                var setName = this.questGiverString;
+
+                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
+
+                if (array.Length > 1 || array.Length == 0)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("goto action - line 60"));
+                }
+                if (array.Length == 1)
+                {
+                    this.questGiver = array[0];
                 }
             }
         }
@@ -60,7 +75,7 @@ namespace QuestGenerator
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
                     float num;
-                    return x != questBase.IssueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 100f, out num);
+                    return x != questGen.IssueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 100f, out num);
                 });
                 
                 if (alternative)
@@ -92,18 +107,20 @@ namespace QuestGenerator
             if (settlement.Name == this.settlementTarget.Name)
             {
                 InformationManager.DisplayMessage(new InformationMessage("Settlement Reached"));
-                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+                if (!questGen.journalLogs[this.index].HasBeenCompleted())
+                {
+                    questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
-                questGen.currentActionIndex++;
-            }
-
-            if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
-            {
-                questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
-            }
-            else
-            {
-                questGen.SuccessConsequences();
+                    questGen.currentActionIndex++;
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                    {
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                    }
+                    else
+                    {
+                        questGen.SuccessConsequences();
+                    }
+                }
             }
 
         }
