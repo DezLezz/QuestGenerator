@@ -182,9 +182,9 @@ namespace QuestGenerator
         private DialogFlow GetListenActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
             TextObject npcLine1 = new TextObject("Hello there.", null);
-            TextObject playerLine1 = new TextObject("{QUEST_GIVER.LINK} told me to come and listen to what you have to say.", null);
+            TextObject playerLine1 = new TextObject("{QUEST_GIVER.LINK} has sent me, do you have any information to share?", null);
             StringHelpers.SetCharacterProperties("QUEST_GIVER", questGiver.CharacterObject, playerLine1);
-            TextObject npcLine2 = new TextObject("Yes, so I've heard. I only have to inform you that this quest is working.", null);
+            TextObject npcLine2 = new TextObject(QuestHelperClass.ListenDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
             InformationManager.DisplayMessage(new InformationMessage("return listen dialog flow"));
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).PlayerLine(playerLine1, null).NpcLine(npcLine2, null, null).Consequence(delegate
             {

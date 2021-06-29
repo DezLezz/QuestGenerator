@@ -121,7 +121,6 @@ namespace QuestGenerator
                 if (this.heroTarget != null)
                 {
                     Hero toGiveHero = this.heroTarget;
-                    int amount = 1;
 
                     TroopRoster troop = toGiveHero.PartyBelongedTo.MemberRoster;
                     int t = rnd.Next(troop.GetTroopRoster().Count);
@@ -189,7 +188,7 @@ namespace QuestGenerator
                         this.itemTarget = DefaultItems.Grain;
                         this.itemAmount = 1;
                     }
-                    this.currentAmount = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
+                    
                 }
 
             }
@@ -211,6 +210,7 @@ namespace QuestGenerator
                 textObject.SetTextVariable("ITEM", this.itemTarget.Name);
                 textObject.SetTextVariable("AMOUNT", this.itemAmount);
                 questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                this.currentAmount = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
             }
             else
             {
@@ -218,6 +218,7 @@ namespace QuestGenerator
                 textObject.SetTextVariable("ITEM", this.itemTarget.Name);
                 textObject.SetTextVariable("AMOUNT", this.itemAmount);
                 questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                this.currentAmount = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
             }
         }
 

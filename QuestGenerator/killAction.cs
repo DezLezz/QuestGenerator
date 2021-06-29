@@ -21,11 +21,9 @@ namespace QuestGenerator
         [XmlIgnore]
         public Hero heroTarget;
 
-        public string nonHeroTarget;
+        public string nonHeroTarget = "none";
 
         public bool heroFlag = false;
-
-        public bool secondpart = false;
 
         public killAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
@@ -44,7 +42,7 @@ namespace QuestGenerator
 
         public override void bringTargetsBack()
         {
-            if (this.heroTarget == null)
+            if (this.heroTarget == null && heroFlag)
             {
                 var setName = this.Action.param[0].target;
 
@@ -144,7 +142,7 @@ namespace QuestGenerator
                         }
                     }
 
-                    if (this.nonHeroTarget == null)
+                    if (this.nonHeroTarget == "none")
                     {
                         Settlement closestHideout = SettlementHelper.FindNearestSettlement((Settlement x) => x.IsHideout());
                         Clan clan = null;
@@ -158,6 +156,11 @@ namespace QuestGenerator
                             clan = Clan.All.GetRandomElementWithPredicate((Clan x) => x.IsBanditFaction);
                         }
                         this.nonHeroTarget = closestHideout.Culture.Name.ToString();
+                    }
+
+                    if (this.nonHeroTarget == "none")
+                    {
+                        this.nonHeroTarget = "Looters";
                     }
 
                     if (alternative)
@@ -261,6 +264,10 @@ namespace QuestGenerator
             else if (this.heroTarget != null)
             {
                 this.heroFlag = true;
+            }
+            else
+            {
+                this.nonHeroTarget = this.Action.param[0].target;
             }
         }
 

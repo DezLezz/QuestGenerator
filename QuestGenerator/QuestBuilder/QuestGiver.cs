@@ -46,9 +46,8 @@ namespace QuestGenerator.QuestBuilder
         public Quest CreateQuest(int questNumb, List<Strategy> strategies, List<Rules> rules)
         {
 
-            //int twoways = rnd.Next(1, 10);
-            int twoways = 0;
-            if (twoways <= 0)
+            int twoways = rnd.Next(1, 11);
+            if (twoways == 1)
             {
                 int r = rnd.Next(this.Motivations.Count);
 
@@ -117,7 +116,7 @@ namespace QuestGenerator.QuestBuilder
                 {
                     int r = rnd.Next(node.motivation.strategies.Count);
                     sequence = node.motivation.strategies[r].actions;
-                    currentTreeNode.info = strategies[r].name;
+                    currentTreeNode.info = node.motivation.strategies[r].name;
 
                 }
                 else

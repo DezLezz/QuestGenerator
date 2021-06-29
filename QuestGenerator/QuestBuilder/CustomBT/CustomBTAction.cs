@@ -63,6 +63,12 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                         case "take":
                             this.ActionTarget = new takeAction(this.Action.name, this.Action);
                             break;
+                        case "use":
+                            this.ActionTarget = new useAction(this.Action.name, this.Action);
+                            break;
+                        case "damage":
+                            this.ActionTarget = new damageAction(this.Action.name, this.Action);
+                            break;
                     }
 
                     this.ActionTarget.questGiver = issueBase.IssueOwner;

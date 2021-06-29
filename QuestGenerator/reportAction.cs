@@ -178,10 +178,10 @@ namespace QuestGenerator
 
         private DialogFlow GetReportActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            TextObject npcLine1 = new TextObject("Hello there.", null);
-            TextObject playerLine1 = new TextObject("{QUEST_GIVER.LINK} told me to come and report to you about this.", null);
+            TextObject npcLine1 = new TextObject("Hello there, what brings you here today?", null);
+            TextObject playerLine1 = new TextObject(QuestHelperClass.ReportDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
             StringHelpers.SetCharacterProperties("QUEST_GIVER", questGiver.CharacterObject, playerLine1);
-            TextObject npcLine2 = new TextObject("Yes thank you. Tell him this quest is working properly.", null);
+            TextObject npcLine2 = new TextObject("Thank you, I'll take into account your report and act accordingly.", null);
             InformationManager.DisplayMessage(new InformationMessage("return report dialog flow"));
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).PlayerLine(playerLine1, null).NpcLine(npcLine2, null, null).Consequence(delegate
             {

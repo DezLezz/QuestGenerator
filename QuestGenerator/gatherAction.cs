@@ -134,15 +134,8 @@ namespace QuestGenerator
 
                             newItem = itemList.ElementAt(r);
 
-                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
-                            {
-                                amount = rnd.Next(1, 10);
-                                this.SetItemAmount(amount);
-                            }
-                            else
-                            {
-                                this.SetItemAmount(1);
-                            }
+                            amount = rnd.Next(1, 11);
+                            this.SetItemAmount(amount);
 
                             Settlement settlement = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
 
@@ -179,15 +172,8 @@ namespace QuestGenerator
 
                             newItem = itemList.ElementAt(r);
 
-                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
-                            {
-                                amount = rnd.Next(1, 10);
-                                this.SetItemAmount(amount);
-                            }
-                            else
-                            {
-                                this.SetItemAmount(1);
-                            }
+                            amount = rnd.Next(1, 11);
+                            this.SetItemAmount(amount);
 
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
@@ -224,15 +210,8 @@ namespace QuestGenerator
 
                             newItem = itemList.ElementAt(r);
 
-                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
-                            {
-                                amount = rnd.Next(1, 10);
-                                this.SetItemAmount(amount);
-                            }
-                            else
-                            {
-                                this.SetItemAmount(1);
-                            }
+                            amount = rnd.Next(1, 11);
+                            this.SetItemAmount(amount);
 
                             Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
 
@@ -269,15 +248,8 @@ namespace QuestGenerator
 
                             newItem = itemList.ElementAt(r);
 
-                            if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
-                            {
-                                amount = rnd.Next(1, 10);
-                                this.SetItemAmount(amount);
-                            }
-                            else
-                            {
-                                this.SetItemAmount(1);
-                            }
+                            amount = rnd.Next(1, 11);
+                            this.SetItemAmount(amount);
 
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
@@ -305,8 +277,6 @@ namespace QuestGenerator
                     }
                 }
 
-
-
                 else if (i == 0)
                 {
 
@@ -316,15 +286,8 @@ namespace QuestGenerator
 
                     newItem = itemList.ElementAt(r);
 
-                    if (this.itemTarget.IsAnimal || this.itemTarget.IsFood)
-                    {
-                        amount = rnd.Next(1, 10);
-                        this.SetItemAmount(amount);
-                    }
-                    else
-                    {
-                        this.SetItemAmount(1);
-                    }
+                    amount = rnd.Next(1, 11);
+                    this.SetItemAmount(amount);
 
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
@@ -367,15 +330,8 @@ namespace QuestGenerator
             else if (this.GetItemAmount() == 0  && this.itemTarget != null)
             {
                 int amount = 0;
-                if (this.itemTarget.IsCraftedWeapon)
-                {
-                    this.SetItemAmount(1);
-                }
-                else
-                {
-                    amount = rnd.Next(2, 10);
-                    this.SetItemAmount(amount);
-                }
+                amount = rnd.Next(1, 11);
+                this.SetItemAmount(amount);
             }
         }
 

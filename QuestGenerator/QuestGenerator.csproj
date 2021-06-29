@@ -103,6 +103,7 @@
     <Compile Include="actionTarget.cs" />
     <Compile Include="BinarySerialization.cs" />
     <Compile Include="captureAction.cs" />
+    <Compile Include="damageAction.cs" />
     <Compile Include="freeAction.cs" />
     <Compile Include="killAction.cs" />
     <Compile Include="PrisonBreakPatch.cs" />
@@ -123,7 +124,9 @@
     <Compile Include="QuestBuilder\QuestNode.cs" />
     <Compile Include="QuestBuilder\Rules.cs" />
     <Compile Include="QuestBuilder\Strategy.cs" />
+    <Compile Include="QuestHelperClass.cs" />
     <Compile Include="takeAction.cs" />
+    <Compile Include="useAction.cs" />
     <Compile Include="XmlSerialization.cs" />
     <Compile Include="exchangeAction.cs" />
     <Compile Include="RefinePatch.cs" />

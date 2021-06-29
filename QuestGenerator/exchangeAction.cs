@@ -214,16 +214,8 @@ namespace QuestGenerator
 
                 newItem = itemList.ElementAt(r);
 
-                if (newItem.IsCraftedWeapon)
-                {
-
-                    this.itemAmountGive = 1;
-                }
-                else
-                {
-                    amount = rnd.Next(1, 10);
-                    this.itemAmountGive = amount;
-                }
+                int r2 = rnd.Next(1, 10);
+                this.itemAmountGive = r2;
 
                 if (alternative)
                 {
@@ -243,7 +235,7 @@ namespace QuestGenerator
                 Hero toGiveHero = this.heroTarget;
 
                 int amount = 20;
-                string itemNumb = this.Action.param[1].target;
+                string itemNumb = this.Action.param[2].target;
 
                 while (this.itemTargetReceive == null && amount > 0)
                 {
@@ -285,16 +277,8 @@ namespace QuestGenerator
                 }
                 if (this.itemAmountReceive == 0)
                 {
-                    if (itemTargetReceive.IsCraftedWeapon)
-                    {
-
-                        this.itemAmountReceive = 1;
-                    }
-                    else
-                    {
-                        int r = rnd.Next(1, 10);
-                        this.itemAmountReceive = r;
-                    }
+                    int r = rnd.Next(1, 10);
+                    this.itemAmountGive = r;
                 }
                 
             }
@@ -331,17 +315,7 @@ namespace QuestGenerator
                 }
 
             }
-            //else if (this.GetItemTarget() != null && list[index - 1].GetHeroTarget() != null)
-            //{
-            //    TextObject textObject = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-            //    textObject.SetTextVariable("HERO", list[index - 1].GetHeroTarget().Name);
-            //    textObject.SetTextVariable("ITEM_AMOUNT1", this.itemAmount);
-            //    textObject.SetTextVariable("ITEM_NAME1", this.itemTarget.Name);
-            //    textObject.SetTextVariable("ITEM_AMOUNT2", list[index + 1].GetItemAmount());
-            //    textObject.SetTextVariable("ITEM_NAME2", list[index + 1].GetItemTarget().Name);
-            //    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
 
-            //}
         }
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
@@ -351,18 +325,18 @@ namespace QuestGenerator
 
         private DialogFlow GetExchangeActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            TextObject npcLine1 = new TextObject("I have {ITEM_AMOUNT2} {ITEM_NAME2}, have you brought {ITEM_AMOUNT1} of {ITEM_NAME1} so we can exchange?", null);
+            TextObject npcLine1 = new TextObject("I have {ITEM_AMOUNT2} {ITEM_NAME2}, have you brought {ITEM_AMOUNT1} of {ITEM_NAME1} so we can trade?", null);
             npcLine1.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
             npcLine1.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
             npcLine1.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
             npcLine1.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-            TextObject textObject = new TextObject("Yes, here you go {?PLAYER.GENDER}milady{?}sir{\\?}, safe travels.", null);
+            TextObject textObject = new TextObject("Pleasure doing business with you {?PLAYER.GENDER}milady{?}sir{\\?}, safe travels.", null);
             TextObject textObject2 = new TextObject("We await your return, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
 
             InformationManager.DisplayMessage(new InformationMessage("return exchange dialog flow"));
-            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here is what you asked for, do you have my items?", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditionsExchange)).NpcLine(textObject, null, null).Consequence(delegate
+            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here you go.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditionsExchange)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.exchangeConsequences(index, questBase, questGen);
             }).CloseDialog().PlayerOption(new TextObject("I'm working on it.", null), null).NpcLine(textObject2, null, null).CloseDialog().EndPlayerOptions().CloseDialog();

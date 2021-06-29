@@ -13,7 +13,8 @@ namespace QuestGenerator
     [XmlInclude(typeof(gotoAction)), XmlInclude(typeof(giveAction)), XmlInclude(typeof(gatherAction)), 
         XmlInclude(typeof(exchangeAction)), XmlInclude(typeof(exploreAction)), XmlInclude(typeof(listenAction)), 
         XmlInclude(typeof(reportAction)), XmlInclude(typeof(subquestAction)), XmlInclude(typeof(captureAction))
-        , XmlInclude(typeof(killAction)), XmlInclude(typeof(freeAction)), XmlInclude(typeof(takeAction))]
+        , XmlInclude(typeof(killAction)), XmlInclude(typeof(freeAction)), XmlInclude(typeof(takeAction))
+        , XmlInclude(typeof(useAction)), XmlInclude(typeof(damageAction))]
     public abstract class actionTarget
     {
         public string action;
@@ -147,6 +148,16 @@ namespace QuestGenerator
         }
 
         public virtual void PrisonersChangeInSettlement(Settlement settlement, FlattenedTroopRoster prisonerRoster, Hero prisonerHero, bool isReleased, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void HeroGainedSkill(Hero hero, SkillObject skill, bool hasNewPerk, int change, bool shouldNotify, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void RaidCompletedEvent(BattleSideEnum winnerSide, MapEvent mapEvent, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
 
         }

@@ -75,7 +75,7 @@ namespace QuestGenerator
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
                     float num;
-                    return x != questGen.IssueSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 100f, out num);
+                    return x != questGen.IssueOwner.CurrentSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueOwner.CurrentSettlement, 100f, out num);
                 });
                 
                 if (alternative)

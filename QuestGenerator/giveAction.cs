@@ -201,30 +201,28 @@ namespace QuestGenerator
             if (this.Action.param[1].target.Contains("item"))
             {
                 Hero toGiveHero = this.heroTarget;
-                int amount = 1;
+                int amount = 0;
                 string itemNumb = this.Action.param[1].target;
+                ItemObject newItem;
+                var itemList = Items.AllTradeGoods;
 
-                while (this.GetItemTarget() == null)
+                int r = rnd.Next(itemList.Count());
+
+                newItem = itemList.ElementAt(r);
+
+                amount = rnd.Next(1, 11);
+                this.SetItemAmount(amount);
+
+                if (newItem != null)
                 {
-                    foreach (ItemRosterElement itemRosterElement in toGiveHero.CurrentSettlement.ItemRoster)
+                    if (alternative)
                     {
-                        if (itemRosterElement.Amount <= amount)
-                        {
-                            
-                            if (alternative)
-                            {
-                                questGen.alternativeMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
-                            }
-                            else
-                            {
-                                questGen.chosenMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
-                            }
-                            int r = rnd.Next(1, 10);
-                            this.itemAmount = r;
-                            break;
-                        }
+                        questGen.alternativeMission.updateItemTargets(itemNumb, newItem);
                     }
-                    amount += 1;
+                    else
+                    {
+                        questGen.chosenMission.updateItemTargets(itemNumb, newItem);
+                    }
                 }
 
             }
@@ -279,7 +277,7 @@ namespace QuestGenerator
             TextObject npcLine1 = new TextObject("Have you brought {ITEM_AMOUNT} of {ITEM_NAME}?", null);
             npcLine1.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
             npcLine1.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-            TextObject textObject = new TextObject("Thank you, {?PLAYER.GENDER}milady{?}sir{\\?}! You are a saviour.", null);
+            TextObject textObject = new TextObject("Thank you, {?PLAYER.GENDER}milady{?}sir{\\?}! You are a saint.", null);
             TextObject textObject2 = new TextObject("We await your success, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
