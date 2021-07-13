@@ -52,7 +52,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("capture action - line 44"));
+                    InformationManager.DisplayMessage(new InformationMessage("capture action - line 55"));
                 }
                 if (array.Length == 1)
                 {
@@ -68,7 +68,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("capture action - line 60"));
+                    InformationManager.DisplayMessage(new InformationMessage("capture action - line 71"));
                 }
                 if (array.Length == 1)
                 {
@@ -84,7 +84,6 @@ namespace QuestGenerator
                 var npcNumb = this.Action.param[0].target;
                 Hero newHero;
                 int r = rnd.Next(1, 3);
-                InformationManager.DisplayMessage(new InformationMessage(r.ToString()));
                 List<Hero> mobileEnemies = new List<Hero>();
                 var parties = MobileParty.All;
 
@@ -110,22 +109,6 @@ namespace QuestGenerator
                             this.nonHeroTarget = m.ActualClan.Culture.Name.ToString();
                             break;
                         }
-                    }
-
-                    if (this.nonHeroTarget == "none")
-                    {
-                        Settlement closestHideout = SettlementHelper.FindNearestSettlement((Settlement x) => x.IsHideout());
-                        Clan clan = null;
-                        if (closestHideout != null)
-                        {
-                            CultureObject banditCulture = closestHideout.Culture;
-                            clan = Clan.BanditFactions.FirstOrDefault((Clan x) => x.Culture == banditCulture);
-                        }
-                        if (clan == null)
-                        {
-                            clan = Clan.All.GetRandomElementWithPredicate((Clan x) => x.IsBanditFaction);
-                        }
-                        this.nonHeroTarget = closestHideout.Culture.Name.ToString();
                     }
 
                     if (this.nonHeroTarget == "none")
@@ -292,7 +275,6 @@ namespace QuestGenerator
                         textObject.SetTextVariable("HERO", this.questGiver.Name);
                         textObject.SetTextVariable("QUEST_SETTLEMENT", this.questGiver.CurrentSettlement.Name);
                         questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-                        InformationManager.DisplayMessage(new InformationMessage("getting dialog flow"));
                         Campaign.Current.ConversationManager.AddDialogFlow(this.GetCaptureActionDialogFlow(this.questGiver, index, this.questGiver, questBase, questGen), this);
                         break;
                     }
@@ -312,7 +294,6 @@ namespace QuestGenerator
                     textObject.SetTextVariable("HERO", this.questGiver.Name);
                     textObject.SetTextVariable("QUEST_SETTLEMENT", this.questGiver.CurrentSettlement.Name);
                     questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-                    InformationManager.DisplayMessage(new InformationMessage("getting dialog flow"));
                     Campaign.Current.ConversationManager.AddDialogFlow(this.GetCaptureActionDialogFlow(this.questGiver, index, this.questGiver, questBase, questGen), this);
                 }
             }
@@ -324,7 +305,7 @@ namespace QuestGenerator
             {
                 if (victim == this.heroTarget)
                 {
-                    questGen.CompleteQuestWithFail();
+                    questGen.FailConsequences();
                 }
             }
         }
@@ -335,7 +316,7 @@ namespace QuestGenerator
             {
                 if (prisoner == this.heroTarget)
                 {
-                    questGen.CompleteQuestWithFail();
+                    questGen.FailConsequences();
                 }
             }
         }
@@ -354,7 +335,6 @@ namespace QuestGenerator
             TextObject textObject2 = new TextObject("We await your success, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
-            InformationManager.DisplayMessage(new InformationMessage("return capture dialog flow"));
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here he is.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(this.ReturnClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.captureConsequences(index, questBase, questGen);
@@ -391,6 +371,10 @@ namespace QuestGenerator
                 }
                 else
                 {
+                    if (this.heroFlag)
+                    {
+                        FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    }
                     questGen.SuccessConsequences();
                 }
             }
@@ -420,6 +404,27 @@ namespace QuestGenerator
 
             explanation = new TextObject("You don't have the required prisoner.", null);
             return false;
+        }
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Capture Criminal":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("I need you to capture {HERO}. I need help bringing him to justice.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("I need you to capture someone from {HERO}. I need help bringing them to justice.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                    }
+                    
+                    break;
+            }
+            return strat;
         }
     }
 }

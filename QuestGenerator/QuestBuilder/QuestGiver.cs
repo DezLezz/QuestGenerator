@@ -46,7 +46,7 @@ namespace QuestGenerator.QuestBuilder
         public Quest CreateQuest(int questNumb, List<Strategy> strategies, List<Rules> rules)
         {
 
-            int twoways = rnd.Next(1, 11);
+            int twoways = rnd.Next(1, 6);
             if (twoways == 1)
             {
                 int r = rnd.Next(this.Motivations.Count);
@@ -225,6 +225,30 @@ namespace QuestGenerator.QuestBuilder
                                         param1.target = param2.target;
                                     }
                                 }
+                                if (param1.target == null)
+                                {
+                                    if (param1.type == "Character")
+                                    {
+                                        param1.target = node.parentQuest.QuestGiver.Characters[node.parentQuest.charCounter];
+                                        node.parentQuest.charCounter++;
+                                    }
+                                    else if (param1.type == "Item")
+                                    {
+                                        param1.target = node.parentQuest.QuestGiver.Items[node.parentQuest.itemCounter];
+                                        node.parentQuest.itemCounter++;
+                                    }
+                                    else if (param1.type == "Location")
+                                    {
+                                        param1.target = node.parentQuest.QuestGiver.Locations[node.parentQuest.locCounter];
+                                        node.parentQuest.locCounter++;
+                                    }
+                                    else if (param1.type == "Enemy")
+                                    {
+
+                                        param1.target = node.parentQuest.QuestGiver.Enemies[node.parentQuest.enemyCounter];
+                                        node.parentQuest.enemyCounter++;
+                                    }
+                                }
                             }
                         }
                         else if (param1.flag == 1)
@@ -309,7 +333,7 @@ namespace QuestGenerator.QuestBuilder
 
         public List<float> updateWeights(List<List<Action>> ruleActions, List<float> w, int index, int depth)
         {
-            w[index] = (float)(w[index] / Math.Pow(depth, 2));
+            w[index] = (float)(w[index] / Math.Pow(depth, 3));
             float portion = (1 - w[index]) / w.Count;
 
             for (int i = 0; i < w.Count; i++)

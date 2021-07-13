@@ -44,7 +44,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("free action - line 37"));
+                    InformationManager.DisplayMessage(new InformationMessage("free action - line 47"));
                 }
                 if (array.Length == 1)
                 {
@@ -60,7 +60,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("free action - line 53"));
+                    InformationManager.DisplayMessage(new InformationMessage("free action - line 63"));
                 }
                 if (array.Length == 1)
                 {
@@ -125,7 +125,6 @@ namespace QuestGenerator
                                 if (this.heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
-                                    InformationManager.DisplayMessage(new InformationMessage(nonEnemies[r].Name.ToString()));
                                     TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
                                     newHero = nonEnemies[r];
                                     questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
@@ -152,7 +151,6 @@ namespace QuestGenerator
                                 if (this.heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
-                                    InformationManager.DisplayMessage(new InformationMessage(nonEnemies[r].Name.ToString()));
                                     TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
                                     newHero = nonEnemies[r];
                                     questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
@@ -164,7 +162,6 @@ namespace QuestGenerator
                         {
                             if (questGen.actionsInOrder[i - 1].action == "damage" || (questGen.actionsInOrder[i - 1].action == "kill" && questGen.actionsInOrder[i - 1].GetHeroTarget() != null) || questGen.actionsInOrder[i - 1].action == "goto")
                             {
-                                InformationManager.DisplayMessage(new InformationMessage(questGen.actionsInOrder[i - 1].action));
                                 Settlement defeatPlace;
                                 Hero defeatTarget = questGen.actionsInOrder[i - 1].GetHeroTarget();
                                 if (defeatTarget != null)
@@ -193,7 +190,6 @@ namespace QuestGenerator
                                 if (this.heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
-                                    InformationManager.DisplayMessage(new InformationMessage(nonEnemies[r].Name.ToString()));
                                     TakePrisonerAction.Apply(targetSet.Party,nonEnemies[r]);
                                     newHero = nonEnemies[r];
                                     questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
@@ -220,7 +216,6 @@ namespace QuestGenerator
                                 if (this.heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
-                                    InformationManager.DisplayMessage(new InformationMessage(nonEnemies[r].Name.ToString()));
                                     TakePrisonerAction.Apply(targetSet.Party,nonEnemies[r]);
                                     newHero = nonEnemies[r];
                                     questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
@@ -256,7 +251,6 @@ namespace QuestGenerator
                         if (this.heroTarget == null)
                         {
                             int r = rnd.Next(nonEnemies.Count());
-                            InformationManager.DisplayMessage(new InformationMessage(nonEnemies[r].Name.ToString()));
                             TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
                             newHero = nonEnemies[r];
                             if (alternative)
@@ -322,6 +316,7 @@ namespace QuestGenerator
                 }
                 else
                 {
+                    FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
                     questGen.SuccessConsequences();
                 }
             }
@@ -346,6 +341,18 @@ namespace QuestGenerator
 
         public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
         {
+        }
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Rescue NPC":
+                    strat = new TextObject("One of my companions, {HERO}, has been arrested. I need you to set him free.", null);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    break;
+            }
+            return strat;
         }
     }
 }

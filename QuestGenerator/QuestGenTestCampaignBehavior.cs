@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
+using TaleWorlds.CampaignSystem.CharacterDevelopment.Managers;
 using TaleWorlds.CampaignSystem.LogEntries;
 using TaleWorlds.CampaignSystem.SandBox;
 using TaleWorlds.Core;
@@ -23,16 +24,13 @@ namespace QuestGenerator
 
         [SaveableField(100)]
         public static Dictionary<Hero, string> HeroMotivations;
-        //private static List<heroPatch> HeroMotivations = new List<heroPatch>();
 
         private string path = @"..\..\Modules\QuestGenerator\MissionList.xml";
 
         public static Generator QuestGen = new Generator(0);
 
         private List<CustomBTNode> missions;
-
         private CustomBTNode chosenMission;
-        float lasttime = 0;
         static Random rnd = new Random();
 
         //[SaveableField(103)]
@@ -56,15 +54,14 @@ namespace QuestGenerator
         public override void RegisterEvents()
         {
             CampaignEvents.OnCheckForIssueEvent.AddNonSerializedListener(this, new Action<Hero>(this.OnCheckForIssue));
-            CampaignEvents.TickEvent.AddNonSerializedListener(this, new Action<float>(this.TickEvent));
+            CampaignEvents.HourlyTickEvent.AddNonSerializedListener(this, new System.Action(this.HourlyTick));
         }
 
-        private void TickEvent(float f)
+        private void HourlyTick()
         {
             if (Input.IsKeyDown(InputKey.G))
             {
                 QuestGen.GenerateOne();
-                lasttime = f;
             }
         }
 
@@ -73,25 +70,11 @@ namespace QuestGenerator
 
             if (HeroMotivations.Count == 0)
             {
-
-                List<string> motivations = new List<string>() { "Knowledge", "Comfort", "Reputation", "Serenity", "Protection", "Conquest", "Wealth", "Ability", "Equipment" };
-                var heroList = Hero.AllAliveHeroes;
-
-                foreach (Hero h in heroList)
-                {
-                    int r = rnd.Next(motivations.Count);
-                    if (!HeroMotivations.ContainsKey(h))
-                    {
-                        HeroMotivations.Add(h, motivations[r]);
-                    }
-                }
-
-                InformationManager.DisplayMessage(new InformationMessage("Motivations made \n"));
+                QuestHelperClass.MotivationGiver();                
             }
 
             if (this.ConditionsHold(hero))
             {
-
                 Campaign.Current.IssueManager.AddPotentialIssueData(hero, new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common));
             }
         }
@@ -104,15 +87,7 @@ namespace QuestGenerator
             if (issueOwner.CurrentSettlement != null) place = issueOwner.CurrentSettlement.Name.ToString();
             InformationManager.DisplayMessage(new InformationMessage("Issue Created for hero " + issueOwner.Name.ToString() + "," + place));
             string motiv = "none";
-
-            foreach (Hero h in HeroMotivations.Keys)
-            {
-                if (issueOwner.Name == h.Name)
-                {
-                    motiv = HeroMotivations[h];
-                    break;
-                }
-            }
+            motiv = HeroMotivations[issueOwner];
 
             foreach (CustomBTNode btNode in this.missions)
             {
@@ -125,12 +100,21 @@ namespace QuestGenerator
                     break;
                 }
             }
-
+            QuestHelperClass.MotivationGiverOneHero(issueOwner);
+            if (issueOwner == null )
+            {
+                return null;
+            }
             return new QuestGenTestCampaignBehavior.QuestGenTestIssue(issueOwner, this.chosenMission);
         }
 
         private bool ConditionsHold(Hero issueGiver)
         {
+            if (issueGiver.CurrentSettlement == null)
+            {
+                return false;
+            }
+
             string motiv = "none";
 
             if (HeroMotivations.ContainsKey(issueGiver))
@@ -144,7 +128,7 @@ namespace QuestGenerator
                 HeroMotivations.Add(issueGiver, motivations[r]);
             }
 
-            if (this.missions.IsEmpty())
+            if (this.missions.IsEmpty() && new FileInfo(path).Length != 0)
             {
                 this.missions = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path); 
             }
@@ -156,7 +140,17 @@ namespace QuestGenerator
 
             if (this.missions.IsEmpty())
             {
-                return false;
+                int i = rnd.Next(1, 6);
+                if (i == 1)
+                {
+                    QuestGen.GenerateOne();
+                    this.missions = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path);
+                }
+                else
+                {
+                    return false;
+                }
+                
             }
 
             foreach (CustomBTNode btNode in this.missions)
@@ -276,6 +270,11 @@ namespace QuestGenerator
                 }
             }
 
+            protected override int RewardGold {
+                get {
+                    return QuestHelperClass.GoldCalculator(this.actionsInOrder);
+                }
+            }
             public override TextObject Title {
                 get {
                     TextObject textObject;
@@ -307,28 +306,293 @@ namespace QuestGenerator
             public override TextObject IssueBriefByIssueGiver {
                 get {
                     string textObject = "";
-                    foreach (actionTarget aT in actionsInOrder)
+                    string strat = "";
+                    if (chosenMission.nodeType == CustomBTType.motivation)
                     {
-                        textObject += aT.action + ", ";
+                        strat = this.chosenMission.info;
                     }
-                    return new TextObject(textObject, null);
+                    else
+                    {
+                        strat = this.chosenMission.Children[0].info;
+                    }
+                    TextObject stratObj = new TextObject("empty", null);
+                    switch (strat)
+                    {
+                        case "Deliver item for study":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Interview NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Obtain luxuries":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Kill pests":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Obtain rare items":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Kill enemies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Visit dangerous place":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Revenge, Justice":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Capture Criminal":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "capture")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Check on NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Recover lost/stolen item":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Rescue NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "free")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Attack threatening entities":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Create Diversion":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Recruit":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Attack enemy":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal stuff":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Gather raw materials":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action =="exchange")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal valuables for resale":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice combat":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice skill":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "use")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Deliver supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Trade for supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "exchange")
+                                {
+                                    stratObj = a.getDescription(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                    }
+                    
+                    if (stratObj.ToString() =="empty")
+                    {
+                        textObject += QuestHelperClass.DescriptionCalculator(strat);
+                    }
+                    else
+                    {
+                        textObject += stratObj.ToString();
+                    }
+
+                    textObject += " As a reward, I'll give you ";
+
+                    TextObject t = new TextObject(textObject + "{GOLD}{GOLD_ICON}.", null);
+                    t.SetTextVariable("GOLD", this.RewardGold);
+                    t.SetTextVariable("GOLD_ICON", "{=!}<img src=\"Icons\\Coin@2x\" extend=\"8\">");
+
+                    return t;
                 }
             }
 
             public override TextObject IssueAcceptByPlayer {
                 get {
-                    return new TextObject("Yes, I think I can handle that.", null);
+                    return new TextObject("Anything else I need to know?", null);
                 }
             }
             public override TextObject IssueQuestSolutionExplanationByIssueGiver {
                 get {
 
-                    return new TextObject("IssueQuestSolutionExplanationByIssueGiver", null);
+                    return new TextObject("No, that should be all.", null);
                 }
             }
             public override TextObject IssueQuestSolutionAcceptByPlayer {
                 get {
-                    return new TextObject("IssueQuestSolutionAcceptByPlayer", null);
+                    return new TextObject("Then I shall be on my way.", null);
                 }
             }
             public override bool IsThereAlternativeSolution {
@@ -369,7 +633,6 @@ namespace QuestGenerator
 
             protected override QuestBase GenerateIssueQuest(string questId)
             {
-                InformationManager.DisplayMessage(new InformationMessage("Quest Created \n"));
                 this.journalLogs = new List<JournalLog>();
                 foreach (actionTarget aT in actionsInOrder)
                 {
@@ -383,12 +646,12 @@ namespace QuestGenerator
                     {
                         alternativeJournalLogs.Add(new JournalLog(this.IssueDueTime, new TextObject(aT.action + "JournalLog", null)));
                     }
-                    QuestBase AlternativeQuest = new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId + "_alternative", null, this.alternativeMission, this.alternativeActionsInOrder, alternativeJournalLogs, true);
-                    return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsInOrder, this.journalLogs, false, (QuestGenTestQuest)AlternativeQuest);
+                    QuestBase AlternativeQuest = new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId + "_alternative", null, this.alternativeMission, this.alternativeActionsInOrder, alternativeJournalLogs,true, QuestHelperClass.TimeCalculator(this.alternativeActionsInOrder), QuestHelperClass.GoldCalculator(this.alternativeActionsInOrder));
+                    return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsInOrder, this.journalLogs, false, QuestHelperClass.TimeCalculator(this.actionsInOrder), this.RewardGold, (QuestGenTestQuest)AlternativeQuest);
                 }
                 else
                 {
-                    return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsInOrder, this.journalLogs, false);
+                    return new QuestGenTestCampaignBehavior.QuestGenTestQuest(questId, base.IssueOwner, this.chosenMission, this.actionsInOrder, this.journalLogs, false, QuestHelperClass.TimeCalculator(this.actionsInOrder), this.RewardGold);
                 }
 
             }
@@ -510,10 +773,9 @@ namespace QuestGenerator
                 }
             }
 
-            public QuestGenTestQuest(string questId, Hero questGiver, CustomBTNode chosenMission, List<actionTarget> actionsInOrder, List<JournalLog> journalLogs, bool alternative, QuestGenTestQuest alternativeReference = null) : base(questId, questGiver, CampaignTime.DaysFromNow(200f), 0)
+            public QuestGenTestQuest(string questId, Hero questGiver, CustomBTNode chosenMission, List<actionTarget> actionsInOrder, List<JournalLog> journalLogs, bool alternative, float time , int reward, QuestGenTestQuest alternativeReference = null) : base(questId, questGiver, CampaignTime.DaysFromNow(time), reward)
             {
                 this.alternativeFlag = alternative;
-                InformationManager.DisplayMessage(new InformationMessage("Create Quest"));
                 this.missionHero = questGiver;
                 this.chosenMission = chosenMission;
                 this.actionsInOrder = actionsInOrder;
@@ -564,7 +826,7 @@ namespace QuestGenerator
             protected override void SetDialogs()
             {
                 this.OfferDialogFlow = DialogFlow.CreateDialogFlow("issue_classic_quest_start", 100).NpcLine(new TextObject("Good Luck.", null), null, null).Condition(() => Hero.OneToOneConversationHero == this.QuestGiver).Consequence(new ConversationSentence.OnConsequenceDelegate(this.QuestAcceptedConsequences)).CloseDialog();
-                this.DiscussDialogFlow = DialogFlow.CreateDialogFlow("quest_discuss", 100).NpcLine(new TextObject("DiscussDialog1.", null), null, null).Condition(() => Hero.OneToOneConversationHero == this.QuestGiver).BeginPlayerOptions().PlayerOption(new TextObject("DiscussDialog2.", null), null).NpcLine(new TextObject("DiscussDialog3.", null), null, null).CloseDialog().PlayerOption(new TextObject("DiscussDialog4.", null), null).NpcLine(new TextObject("DiscussDialog6.", null), null, null).CloseDialog().EndPlayerOptions().CloseDialog();
+                this.DiscussDialogFlow = DialogFlow.CreateDialogFlow("quest_discuss", 100).NpcLine(new TextObject("Yes, yes. Hurry it up now, time's running out.", null), null, null).Condition(() => Hero.OneToOneConversationHero == this.QuestGiver).BeginPlayerOptions().PlayerOption(new TextObject("Alright, will do.", null), null).EndPlayerOptions().CloseDialog();
             }
 
             public JournalLog getDiscreteLog(TextObject text, TextObject taskName, int currentProgress, int targetProgress, TextObject shortText = null, bool hideInformation = false)
@@ -581,7 +843,7 @@ namespace QuestGenerator
             {
                 base.StartQuest();
 
-                this.currentAction = actionsInOrder[0];
+                this.currentAction = this.actionsInOrder[0];
                 this.currentActionIndex = 0;
 
                 this.chosenMission.run(CustomBTStep.questQ, (QuestBase)this, this);
@@ -669,11 +931,32 @@ namespace QuestGenerator
             {
                 if (!alternativeFlag)
                 {
-                    GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, 100, false);
+                    GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, this.RewardGold, false);
+                    GainRenownAction.Apply(Hero.MainHero, 1f, false);
+                    TraitLevelingHelper.OnIssueSolvedThroughQuest(base.QuestGiver, new Tuple<TraitObject, int>[]
+                    {
+                    new Tuple<TraitObject, int>(DefaultTraits.Honor, 50)
+                    });
+                    this.RelationshipChangeWithQuestGiver = 5;
+                    base.QuestGiver.AddPower(5f);
+                    this.missionHero.CurrentSettlement.Prosperity += 10f;
+                    
                 }
                 TextObject textObject = new TextObject("You have completed the mission", null);
                 base.AddLog(textObject, true);
+                
                 base.CompleteQuestWithSuccess();
+            }
+
+            public void FailConsequences()
+            {
+                if (!alternativeFlag)
+                {
+                    this.RelationshipChangeWithQuestGiver = -5;
+                    base.QuestGiver.AddPower(-5f);
+                    this.missionHero.CurrentSettlement.Prosperity += -10f;
+                }
+                base.CompleteQuestWithFail();
             }
 
             protected override void RegisterEvents()

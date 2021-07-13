@@ -71,8 +71,8 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                             break;
                     }
 
-                    this.ActionTarget.questGiver = issueBase.IssueOwner;
-                    this.ActionTarget.questGiverString = issueBase.IssueOwner.Name.ToString();
+                    this.ActionTarget.questGiver = questGen.missionHero;
+                    this.ActionTarget.questGiverString = questGen.missionHero.Name.ToString();
                 }
                 
 

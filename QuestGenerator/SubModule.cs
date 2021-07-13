@@ -18,7 +18,6 @@ namespace QuestGenerator
 
             if (campaign)
             {
-                InformationManager.DisplayMessage(new InformationMessage("Behavior added \n"));
                 CampaignGameStarter campaignStarter = (CampaignGameStarter)gameStarter;
                 campaignStarter.AddBehavior(new QuestGenTestCampaignBehavior());
             }
@@ -36,7 +35,12 @@ namespace QuestGenerator
                 gen.GenerateOne();
                 InformationManager.DisplayMessage(new InformationMessage("Quest Generated"));
             }, () => reason));
-
+            
+            Module.CurrentModule.AddInitialStateOption(new InitialStateOption("PreGenQuests", new TextObject("Pre-Generate Quests", null), 9991, () => {
+                var gen = new Generator(0);
+                gen.GenerateOneHundred();
+                InformationManager.DisplayMessage(new InformationMessage("Quests Generated"));
+            }, () => reason));
         }
 
 

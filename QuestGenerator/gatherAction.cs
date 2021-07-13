@@ -66,13 +66,12 @@ namespace QuestGenerator
             if (this.GetItemTarget() == null)
             {
                 var setName = this.Action.param[0].target;
-                InformationManager.DisplayMessage(new InformationMessage(setName));
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("gather action - 75"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - 74"));
                 }
                 if (array.Length == 1)
                 {
@@ -89,7 +88,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 92"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 91"));
                 }
                 if (array.Length == 1)
                 {
@@ -104,7 +103,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 107"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 106"));
                 }
                 if (array.Length == 1)
                 {
@@ -128,31 +127,35 @@ namespace QuestGenerator
                         if (questGen.alternativeActionsInOrder[i - 1].action == "goto")
                         {
 
-                            var itemList = Items.AllTradeGoods;
+                            var itemList = Items.All;
 
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
 
-                            amount = rnd.Next(1, 11);
+                            amount = 300 / newItem.Value;
+                            if (amount <= 0)
+                            {
+                                amount = 1;
+                            }
                             this.SetItemAmount(amount);
 
                             Settlement settlement = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
 
                             Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                float num;
+                                
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
-                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    if (iR.EquipmentElement.Item.Name == newItem.Name)
                                     {
                                         flag = true;
                                         break;
                                     }
                                 }
 
-                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, settlement, 1500f, out num) && flag;
+                                return flag;
                             });
 
                             if (settlement != null)
@@ -166,29 +169,33 @@ namespace QuestGenerator
                         else
                         {
 
-                            var itemList = Items.AllTradeGoods;
+                            var itemList = Items.All;
 
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
 
-                            amount = rnd.Next(1, 11);
+                            amount = 300 / newItem.Value;
+                            if (amount <= 0)
+                            {
+                                amount = 1;
+                            }
                             this.SetItemAmount(amount);
 
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                float num;
+                                
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
-                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    if (iR.EquipmentElement.Item.Name == newItem.Name)
                                     {
                                         flag = true;
                                         break;
                                     }
                                 }
 
-                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
+                                return flag;
                             });
 
                             if (settlement != null)
@@ -204,31 +211,35 @@ namespace QuestGenerator
                         if (questGen.actionsInOrder[i - 1].action == "goto")
                         {
 
-                            var itemList = Items.AllTradeGoods;
+                            var itemList = Items.All;
 
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
 
-                            amount = rnd.Next(1, 11);
+                            amount = 300 / newItem.Value;
+                            if (amount <= 0)
+                            {
+                                amount = 1;
+                            }
                             this.SetItemAmount(amount);
 
                             Settlement settlement = questGen.actionsInOrder[i - 1].GetSettlementTarget();
 
                             Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                float num;
+                                
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
-                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    if (iR.EquipmentElement.Item.Name == newItem.Name)
                                     {
                                         flag = true;
                                         break;
                                     }
                                 }
 
-                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, settlement, 1500f, out num) && flag;
+                                return flag;
                             });
 
                             if (settlement != null)
@@ -242,29 +253,33 @@ namespace QuestGenerator
                         else
                         {
 
-                            var itemList = Items.AllTradeGoods;
+                            var itemList = Items.All;
 
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
 
-                            amount = rnd.Next(1, 11);
+                            amount = 300 / newItem.Value;
+                            if (amount <= 0)
+                            {
+                                amount = 1;
+                            }
                             this.SetItemAmount(amount);
 
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                float num;
+                                
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
-                                    if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                                    if (iR.EquipmentElement.Item.Name == newItem.Name)
                                     {
                                         flag = true;
                                         break;
                                     }
                                 }
 
-                                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
+                                return flag;
                             });
 
                             if (settlement != null)
@@ -280,29 +295,33 @@ namespace QuestGenerator
                 else if (i == 0)
                 {
 
-                    var itemList = Items.AllTradeGoods;
+                    var itemList = Items.All;
 
                     int r = rnd.Next(itemList.Count());
 
                     newItem = itemList.ElementAt(r);
 
-                    amount = rnd.Next(1, 11);
+                    amount = 300 / newItem.Value;
+                    if (amount <= 0)
+                    {
+                        amount = 1;
+                    }
                     this.SetItemAmount(amount);
 
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
-                        float num;
+                        
                         bool flag = false;
                         foreach (ItemRosterElement iR in x.ItemRoster)
                         {
-                            if (iR.EquipmentElement.Item.Name == this.itemTarget.Name)
+                            if (iR.EquipmentElement.Item.Name == newItem.Name)
                             {
                                 flag = true;
                                 break;
                             }
                         }
 
-                        return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueSettlement, 1500f, out num) && flag;
+                        return flag;
                     });
 
                     if (settlement != null)
@@ -313,7 +332,7 @@ namespace QuestGenerator
                     this.SetSettlementTarget(settlement);
                 }
 
-                if (this.GetItemTarget() != null)
+                if (newItem != null)
                 {
                     if (alternative)
                     {
@@ -334,9 +353,6 @@ namespace QuestGenerator
                 this.SetItemAmount(amount);
             }
         }
-
-            
-        
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
@@ -403,7 +419,6 @@ namespace QuestGenerator
                 bool flag = false;
                 int amountRemaining = this.GetItemAmount();
                 int amountPurchased = 0;
-                InformationManager.DisplayMessage(new InformationMessage("item refined: " + equipmentElement.Item.Name.ToString()));
 
                 var refined = RefinePatch.refineFormulaS;
 
@@ -457,7 +472,6 @@ namespace QuestGenerator
                 bool flag = false;
                 int amountRemaining = this.GetItemAmount();
                 int amountPurchased = 0;
-                InformationManager.DisplayMessage(new InformationMessage("item smelted: " + equipmentElement.Item.Name.ToString()));
                 int[] smeltingOutputForItem = Campaign.Current.Models.SmithingModel.GetSmeltingOutputForItem(equipmentElement.Item);
 
                 Campaign campaign = Campaign.Current;
@@ -508,7 +522,6 @@ namespace QuestGenerator
             bool flag = false;
             int amountRemaining = this.GetItemAmount();
             int amountPurchased = 0;
-            InformationManager.DisplayMessage(new InformationMessage("item crafted: " + item.Name.ToString()));
 
             if (item == this.GetItemTarget())
             {
@@ -562,6 +575,19 @@ namespace QuestGenerator
                     break;
                 }
             }
+        }
+
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Gather raw materials":
+                    strat = new TextObject("I need you to gather {ITEM}. Can you do that for me?", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+            }
+            return strat;
         }
     }
 }

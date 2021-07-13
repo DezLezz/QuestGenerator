@@ -9,6 +9,7 @@ using TaleWorlds.Localization;
 using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
+using Helpers;
 
 namespace QuestGenerator
 {
@@ -20,11 +21,16 @@ namespace QuestGenerator
         public Hero heroTarget;
 
         [XmlIgnore]
+        public Settlement settlementTarget;
+
+        [XmlIgnore]
         public ItemObject itemTarget;
 
         public int itemAmount = 0;
 
         public int currentAmount = 0;
+
+        public bool settlementFlag = false;
 
         public takeAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
@@ -58,7 +64,7 @@ namespace QuestGenerator
 
         public override void bringTargetsBack()
         {
-            if (this.heroTarget == null)
+            if (this.heroTarget == null && !this.settlementFlag)
             {
                 var setName = this.Action.param[0].target;
 
@@ -66,11 +72,26 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("give action - line 73"));
+                    //InformationManager.DisplayMessage(new InformationMessage("take action - line 75"));
                 }
                 if (array.Length == 1)
                 {
                     this.heroTarget = array[0];
+                }
+            }
+            if (this.settlementTarget == null && settlementFlag)
+            {
+                var setName = this.Action.param[0].target;
+
+                Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == setName) select x).ToArray<Settlement>();
+
+                if (array.Length > 1 || array.Length == 0)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("take action - line 90"));
+                }
+                if (array.Length == 1)
+                {
+                    this.settlementTarget = array[0];
                 }
             }
 
@@ -82,7 +103,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("give action - line 89"));
+                    InformationManager.DisplayMessage(new InformationMessage("take action - line 106"));
                 }
                 if (array.Length == 1)
                 {
@@ -99,7 +120,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("listen action - line 106"));
+                    InformationManager.DisplayMessage(new InformationMessage("listen action - line 123"));
                 }
                 if (array.Length == 1)
                 {
@@ -111,8 +132,33 @@ namespace QuestGenerator
         public override void IssueQ(IssueBase questBase, QuestGenTestCampaignBehavior.QuestGenTestIssue questGen, bool alternative)
         {
             if (this.Action.param[0].target.Contains("enemy"))
-            {
-                InformationManager.DisplayMessage(new InformationMessage("take action - line 113"));                
+            {                
+                if (alternative)
+                {
+                    if (questGen.alternativeActionsInOrder[this.index - 1].action == "damage")
+                    {
+                        this.Action.param[0].target = questGen.alternativeActionsInOrder[this.index - 1].Action.param[0].target;
+                        this.settlementFlag = true;
+                        this.settlementTarget = SettlementHelper.FindNearestSettlement((Settlement x) => x.Name.ToString() == this.Action.param[0].target);
+                    }
+                    else
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage("take action - line 146"));
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].action == "damage")
+                    {
+                        this.Action.param[0].target = questGen.actionsInOrder[this.index - 1].Action.param[0].target;
+                        this.settlementFlag = true;
+                        this.settlementTarget = SettlementHelper.FindNearestSettlement((Settlement x) => x.Name.ToString() == this.Action.param[0].target);
+                    }
+                    else
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage("take action - line 159"));
+                    }
+                }
             }
 
             if (this.Action.param[1].target.Contains("item"))
@@ -130,7 +176,7 @@ namespace QuestGenerator
 
                     int e = rnd.Next(battleequipment.Count());
                     Equipment equipment = battleequipment.ElementAt(e);
-                    
+
                     for (EquipmentIndex equipmentIndex = 0; equipmentIndex < EquipmentIndex.NumEquipmentSetSlots; equipmentIndex++)
                     {
                         EquipmentElement equipmentElement = equipment[equipmentIndex];
@@ -148,8 +194,37 @@ namespace QuestGenerator
                             break;
                         }
                     }
-                    
 
+
+                }
+                else if (settlementFlag)
+                {
+                    int i = this.index;
+
+                    int amount = 20;
+
+                    while (this.itemTarget == null && amount > 0)
+                    {
+                        foreach (ItemRosterElement itemRosterElement in this.settlementTarget.ItemRoster)
+                        {
+                            if (itemRosterElement.Amount >= amount)
+                            {
+                                if (alternative)
+                                {
+                                    questGen.alternativeMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
+                                }
+                                else
+                                {
+                                    questGen.chosenMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
+                                }
+
+                                int r = rnd.Next(1, amount);
+                                this.itemAmount = r;
+                                break;
+                            }
+                        }
+                        amount -= 1;
+                    }
                 }
                 else
                 {
@@ -163,7 +238,7 @@ namespace QuestGenerator
                             TroopRosterElement troopRosterElement = troop.GetTroopRoster()[t];
                             Equipment equipment = troopRosterElement.Character.FirstBattleEquipment;
 
-                            for (EquipmentIndex equipmentIndex = 0; equipmentIndex < EquipmentIndex.NumEquipmentSetSlots; equipmentIndex++)
+                            for (EquipmentIndex equipmentIndex = 0; equipmentIndex < EquipmentIndex.ArmorItemEndSlot; equipmentIndex++)
                             {
                                 EquipmentElement equipmentElement = equipment[equipmentIndex];
                                 if (!equipmentElement.IsEmpty)
@@ -188,15 +263,19 @@ namespace QuestGenerator
                         this.itemTarget = DefaultItems.Grain;
                         this.itemAmount = 1;
                     }
-                    
+
                 }
 
             }
 
             else if (this.GetItemTarget() != null && this.GetItemAmount() == 0)
             {
-                int r = rnd.Next(1, 10);
-                this.SetItemAmount(r);
+                int amount = 300 / this.GetItemTarget().Value;
+                if (amount <= 0)
+                {
+                    amount = 1;
+                }
+                this.SetItemAmount(amount);
             }
         }
 
@@ -207,6 +286,16 @@ namespace QuestGenerator
                 questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
                 TextObject textObject = new TextObject("Take {AMOUNT} {ITEM} from {HERO}.", null);
                 textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                textObject.SetTextVariable("ITEM", this.itemTarget.Name);
+                textObject.SetTextVariable("AMOUNT", this.itemAmount);
+                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                this.currentAmount = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
+            }
+            else if (this.settlementFlag)
+            {
+                questBase.AddTrackedObject(this.settlementTarget);
+                TextObject textObject = new TextObject("Take {AMOUNT} {ITEM} from {SETTLEMENT}.", null);
+                textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
                 textObject.SetTextVariable("ITEM", this.itemTarget.Name);
                 textObject.SetTextVariable("AMOUNT", this.itemAmount);
                 questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
@@ -244,14 +333,25 @@ namespace QuestGenerator
                     }
 
                 }
+                else if (settlementFlag)
+                {
+                    if (mapEventSide.IsMainPartyAmongParties() && mapEventSide2.Parties.Any((MapEventParty t) => t.Party == this.heroTarget.PartyBelongedTo.Party))
+                    {
+                        int current = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
+                        if (current - this.currentAmount >= this.itemAmount)
+                        {
+                            this.takeConsequences(index, questBase, questGen);
+                        }
+                        else
+                        {
+                            this.currentAmount += current;
+                        }
+                    }
+                }
                 else
                 {
                     if (mapEventSide.IsMainPartyAmongParties() && mapEventSide2.Parties.Any((MapEventParty t) => t.Party.Culture.Name.ToString() == this.Action.param[0].target))
                     {
-                        foreach (ItemRosterElement ir in mapEventSide2.ItemRosterForPlayerLootShare(mapEventSide2.Parties[0].Party))
-                        {
-                            InformationManager.DisplayMessage(new InformationMessage(ir.EquipmentElement.Item.Name.ToString()));
-                        }
                         int current = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
                         if (current - this.currentAmount >= this.itemAmount)
                         {
@@ -267,6 +367,7 @@ namespace QuestGenerator
             }
         }
 
+
         private void takeConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
             if (!questGen.journalLogs[this.index].HasBeenCompleted())
@@ -281,6 +382,10 @@ namespace QuestGenerator
                 }
                 else
                 {
+                    if (this.heroTarget != null)
+                    {
+                        FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    }
                     questGen.SuccessConsequences();
                 }
             }
@@ -314,6 +419,74 @@ namespace QuestGenerator
 
         public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
         {
+        }
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Steal stuff":
+                    if (this.heroTarget != null)
+                    {
+                        strat = new TextObject("There're some items I need you to steal from {HERO}. Are you up for the task?", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("There're some items I need you to steal from {SETTLEMENT}. Are you up for the task?", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("There're some items I need you to steal from a group of {HERO}. Are you up for the task?", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    
+                    break;
+
+                case "Gather raw materials":
+                    strat = new TextObject("I need you to gather {ITEM}. Can you do that for me?", null);
+                    strat.SetTextVariable("HERO", this.itemTarget.Name);
+                    break;
+
+                case "Steal valuables for resale":
+                    if (this.heroTarget != null)
+                    {
+                        strat = new TextObject("There're some items I need you to steal from {HERO}. Are you up for the task?", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("There're some items I need you to steal from {SETTLEMENT}. Are you up for the task?", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("There're some items I need you to steal from a group of {HERO}. Are you up for the task?", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+                case "Steal supplies":
+                    if (this.heroTarget != null)
+                    {
+                        strat = new TextObject("There're some items I need you to steal from {HERO}. Are you up for the task?", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("There're some items I need you to steal from {SETTLEMENT}. Are you up for the task?", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("There're some items I need you to steal from a group of {HERO}. Are you up for the task?", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+            }
+            return strat;
         }
     }
 }

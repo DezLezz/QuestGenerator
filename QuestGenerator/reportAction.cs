@@ -88,9 +88,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in questBase.IssueSettlement.Notables)
+                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != questGen.IssueOwner)
+                                if (hero != this.questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -110,9 +110,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in questBase.IssueSettlement.Notables)
+                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != questGen.IssueOwner)
+                                if (hero != this.questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -125,9 +125,9 @@ namespace QuestGenerator
 
                 else if (i == 0)
                 {
-                    foreach (Hero hero in questBase.IssueSettlement.Notables)
+                    foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
                     {
-                        if (hero != questGen.IssueOwner)
+                        if (hero != this.questGiver)
                         {
                             targetHero = hero.Name.ToString();
                             newHero = hero;
@@ -150,7 +150,7 @@ namespace QuestGenerator
 
                 if (targetHero == "none")
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Target Hero is on fire"));
+                    InformationManager.DisplayMessage(new InformationMessage("report action - line 153"));
                 }
 
 
@@ -165,7 +165,6 @@ namespace QuestGenerator
                 TextObject textObject = new TextObject("Report to {HERO}", null);
                 textObject.SetTextVariable("HERO", this.heroTarget.Name);
                 questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-                InformationManager.DisplayMessage(new InformationMessage("Hero " + this.heroTarget.Name + " tracked to report"));
 
                 Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(this.heroTarget, this.index, this.questGiver, questBase, questGen), this);
             }
@@ -182,7 +181,6 @@ namespace QuestGenerator
             TextObject playerLine1 = new TextObject(QuestHelperClass.ReportDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
             StringHelpers.SetCharacterProperties("QUEST_GIVER", questGiver.CharacterObject, playerLine1);
             TextObject npcLine2 = new TextObject("Thank you, I'll take into account your report and act accordingly.", null);
-            InformationManager.DisplayMessage(new InformationMessage("return report dialog flow"));
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).PlayerLine(playerLine1, null).NpcLine(npcLine2, null, null).Consequence(delegate
             {
                 this.reportConsequences(index, questBase, questGen);
@@ -227,6 +225,7 @@ namespace QuestGenerator
         public override void updateItemTargets(string targetString, ItemObject targetItem)
         {
         }
+        
 
     }
 }

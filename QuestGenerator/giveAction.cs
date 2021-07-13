@@ -103,7 +103,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("listen action - line 106"));
+                    InformationManager.DisplayMessage(new InformationMessage("give action - line 106"));
                 }
                 if (array.Length == 1)
                 {
@@ -132,9 +132,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in questBase.IssueSettlement.Notables)
+                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != questGen.IssueOwner)
+                                if (hero != this.questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -153,9 +153,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in questBase.IssueSettlement.Notables)
+                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != questGen.IssueOwner)
+                                if (hero != this.questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -193,7 +193,7 @@ namespace QuestGenerator
 
                 if (targetHero == "none")
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Target Hero is on fire"));
+                    InformationManager.DisplayMessage(new InformationMessage("give action - line 196"));
                 }
 
             }
@@ -204,13 +204,17 @@ namespace QuestGenerator
                 int amount = 0;
                 string itemNumb = this.Action.param[1].target;
                 ItemObject newItem;
-                var itemList = Items.AllTradeGoods;
+                var itemList = Items.All;
 
                 int r = rnd.Next(itemList.Count());
 
                 newItem = itemList.ElementAt(r);
 
-                amount = rnd.Next(1, 11);
+                amount = 300/newItem.Value;
+                if (amount <= 0)
+                {
+                    amount = 1;
+                }
                 this.SetItemAmount(amount);
 
                 if (newItem != null)
@@ -229,8 +233,12 @@ namespace QuestGenerator
 
             else if (this.GetItemTarget() != null && this.GetItemAmount() == 0)
             {
-                int r = rnd.Next(1, 10);
-                this.SetItemAmount(r);
+                int amount = 300 / this.GetItemTarget().Value;
+                if (amount <= 0)
+                {
+                    amount = 1;
+                }
+                this.SetItemAmount(amount);
             }
 
         }
@@ -282,7 +290,6 @@ namespace QuestGenerator
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
 
-            InformationManager.DisplayMessage(new InformationMessage("return give dialog flow"));
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here is what you asked for.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.giveConsequences(index, questBase, questGen);
@@ -414,6 +421,35 @@ namespace QuestGenerator
                     break;
                 }
             }
+        }
+
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty",null);
+            switch (strategy)
+            {
+                case "Deliver item for study":
+                    strat = new TextObject("I need you to deliver {ITEM} to me, think you could do that?", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+                case "Obtain luxuries":
+                    strat = new TextObject("There are some things I've been craving. Do you think you could bring {ITEM} to me?", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+                case "Obtain rare items":
+                    strat = new TextObject("{ITEM} has been lacking and is now rare. Find it and bring it to me.", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+                case "Recover lost/stolen item":
+                    strat = new TextObject("I've lost {ITEM}, think you could get it back for me?", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+                case "Deliver supplies":
+                    strat = new TextObject("We are in need some supplies in our settlement. Can you get {ITEM} for us?", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+            }
+            return strat;
         }
 
     }

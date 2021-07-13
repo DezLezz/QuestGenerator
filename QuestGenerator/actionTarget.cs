@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.Core;
+using TaleWorlds.Localization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using static TaleWorlds.CampaignSystem.QuestBase;
 
@@ -160,6 +161,11 @@ namespace QuestGenerator
         public virtual void RaidCompletedEvent(BattleSideEnum winnerSide, MapEvent mapEvent, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
 
+        }
+
+        public virtual TextObject getDescription(string strategy)
+        {
+            return new TextObject();
         }
     }
 }

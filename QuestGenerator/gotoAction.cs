@@ -74,8 +74,7 @@ namespace QuestGenerator
                 string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
-                    float num;
-                    return x != questGen.IssueOwner.CurrentSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueOwner.CurrentSettlement, 100f, out num);
+                    return x != this.questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == this.questGiver.MapFaction;
                 });
                 
                 if (alternative)
@@ -106,7 +105,6 @@ namespace QuestGenerator
         {
             if (settlement.Name == this.settlementTarget.Name)
             {
-                InformationManager.DisplayMessage(new InformationMessage("Settlement Reached"));
                 if (!questGen.journalLogs[this.index].HasBeenCompleted())
                 {
                     questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
@@ -146,5 +144,17 @@ namespace QuestGenerator
         {
         }
 
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Visit dangerous place":
+                    strat = new TextObject("I need you to scout {SETTLEMENT}. Report back to me if you find anything worth considering.", null);
+                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    break;
+            }
+            return strat;
+        }
     }
 }

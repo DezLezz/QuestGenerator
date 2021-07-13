@@ -70,8 +70,8 @@ namespace QuestGenerator
                     break;
                 }
             }
-            //int l = rnd.Next(5, 20);
-            this.levelAmount = 5000 + this.currentLevel;
+            int l = rnd.Next(5, 20);
+            this.levelAmount = l + this.currentLevel;
             TextObject textObject = new TextObject("Level up your {SKILL} by at least {AMOUNT} levels.", null);
             textObject.SetTextVariable("SKILL", this.skillName);
             textObject.SetTextVariable("AMOUNT", this.levelAmount - this.currentLevel);
@@ -132,6 +132,19 @@ namespace QuestGenerator
 
         public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
         {
+        }
+
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Practice skill":
+                    strat = new TextObject("I advise you to train {SKILL} for the future.", null);
+                    strat.SetTextVariable("SKILL", this.skillName);
+                    break;
+            }
+            return strat;
         }
     }
 }

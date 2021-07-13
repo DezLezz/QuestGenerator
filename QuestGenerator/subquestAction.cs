@@ -118,7 +118,7 @@ namespace QuestGenerator
 
                             foreach (Hero h in settlement.Notables)
                             {
-                                if (h.Issue == null && !h.CanHaveQuestsOrIssues())
+                                if (h.Issue == null && h.CanHaveQuestsOrIssues())
                                 {
                                     newHero = h;
                                     targetHero = h.Name.ToString();
@@ -133,17 +133,16 @@ namespace QuestGenerator
                         {
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                float num;
-                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => !y.CanHaveQuestsOrIssues()))
+                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == this.questGiver.MapFaction)
                                 {
-                                    return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 150f, out num);
+                                    return true;
                                 }
                                 return false;
                             });
 
                             foreach (Hero h in settlement.Notables)
                             {
-                                if (h.Issue == null && !h.CanHaveQuestsOrIssues())
+                                if (h.Issue == null && h.CanHaveQuestsOrIssues())
                                 {
                                     newHero = h;
                                     targetHero = newHero.Name.ToString();
@@ -164,7 +163,7 @@ namespace QuestGenerator
 
                             foreach (Hero h in settlement.Notables)
                             {
-                                if (h.Issue == null && !h.CanHaveQuestsOrIssues())
+                                if (h.Issue == null && h.CanHaveQuestsOrIssues())
                                 {
                                     newHero = h;
                                     targetHero = h.Name.ToString();
@@ -179,17 +178,16 @@ namespace QuestGenerator
                         {
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                float num;
-                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => !y.CanHaveQuestsOrIssues()))
+                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == this.questGiver.MapFaction)
                                 {
-                                    return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 150f, out num);
+                                    return true;
                                 }
                                 return false;
                             });
 
                             foreach (Hero h in settlement.Notables)
                             {
-                                if (h.Issue == null && !h.CanHaveQuestsOrIssues())
+                                if (h.Issue == null && h.CanHaveQuestsOrIssues())
                                 {
                                     newHero = h;
                                     targetHero = newHero.Name.ToString();
@@ -206,17 +204,16 @@ namespace QuestGenerator
                 {
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
-                        float num;
-                        if (Enumerable.Any<Hero>(x.Notables, (Hero y) => !y.CanHaveQuestsOrIssues()))
+                        if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == this.questGiver.MapFaction)
                         {
-                            return Campaign.Current.Models.MapDistanceModel.GetDistance(x, questBase.IssueSettlement, 150f, out num);
+                            return true;
                         }
                         return false;
                     });
 
                     foreach (Hero h in settlement.Notables)
                     {
-                        if (h.Issue == null && !h.CanHaveQuestsOrIssues())
+                        if (h.Issue == null && h.CanHaveQuestsOrIssues())
                         {
                             newHero = h;
                             targetHero = newHero.Name.ToString();
@@ -240,7 +237,7 @@ namespace QuestGenerator
                 }
                 if (targetHero == "none")
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Target Hero is on fire"));
+                    InformationManager.DisplayMessage(new InformationMessage("subquest action - line 243"));
                 }
             }
 
@@ -250,8 +247,12 @@ namespace QuestGenerator
                 this.settlementTargetString = this.settlementTarget.Name.ToString();
             }
 
-            PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
-            Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, this.heroTarget);
+            if (this.heroTarget.CanHaveQuestsOrIssues())
+            {
+                PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+                Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, this.heroTarget);
+            }
+            
 
         }
 
@@ -271,7 +272,7 @@ namespace QuestGenerator
             }
             else
             {
-                InformationManager.DisplayMessage(new InformationMessage("Something went wrong"));
+                InformationManager.DisplayMessage(new InformationMessage("subquest action - line 274"));
             }
         }
 

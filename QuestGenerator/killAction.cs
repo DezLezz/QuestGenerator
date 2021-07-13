@@ -50,7 +50,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("kill action - line 45"));
+                    InformationManager.DisplayMessage(new InformationMessage("kill action - line 53"));
                 }
                 if (array.Length == 1)
                 {
@@ -66,7 +66,7 @@ namespace QuestGenerator
 
                 if (array.Length > 1 || array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("kill action - line 61"));
+                    InformationManager.DisplayMessage(new InformationMessage("kill action - line 69"));
                 }
                 if (array.Length == 1)
                 {
@@ -82,7 +82,6 @@ namespace QuestGenerator
                 var npcNumb = this.Action.param[0].target;
                 Hero newHero;
                 int r = rnd.Next(1, 3);
-                InformationManager.DisplayMessage(new InformationMessage(r.ToString()));
                 List<Hero> mobileEnemies = new List<Hero>();
                 var parties = MobileParty.All;
 
@@ -141,23 +140,6 @@ namespace QuestGenerator
                             break;
                         }
                     }
-
-                    if (this.nonHeroTarget == "none")
-                    {
-                        Settlement closestHideout = SettlementHelper.FindNearestSettlement((Settlement x) => x.IsHideout());
-                        Clan clan = null;
-                        if (closestHideout != null)
-                        {
-                            CultureObject banditCulture = closestHideout.Culture;
-                            clan = Clan.BanditFactions.FirstOrDefault((Clan x) => x.Culture == banditCulture);
-                        }
-                        if (clan == null)
-                        {
-                            clan = Clan.All.GetRandomElementWithPredicate((Clan x) => x.IsBanditFaction);
-                        }
-                        this.nonHeroTarget = closestHideout.Culture.Name.ToString();
-                    }
-
                     if (this.nonHeroTarget == "none")
                     {
                         this.nonHeroTarget = "Looters";
@@ -325,6 +307,10 @@ namespace QuestGenerator
                 }
                 else
                 {
+                    if (this.heroFlag)
+                    {
+                        FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    }
                     questGen.SuccessConsequences();
                 }
             }
@@ -350,6 +336,81 @@ namespace QuestGenerator
 
         public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
         {
+        }
+
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Kill pests":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("{HERO} has been wreaking havoc lately. I need you to get rid of them.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("{HERO} have been wreaking havoc lately. I need you to get rid of them.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Kill enemies":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("A few of my enemies have been more active recently. I need you to teach {HERO} a lesson.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("A few of my enemies have been more active recently.I need you to teach a group of {HERO} a lesson.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Revenge, Justice":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("{HERO} has wronged me. I need you to take care of them so that justice can be served.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("A group of {HERO} has wronged me. I need you to take care of them so that justice can be served.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Attack threatening entities":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("{HERO} has been threatening the well-being of our settlement. I need you to deal with him.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("A group of {HERO} have been threatening the well-being of our settlement. I need you to deal with them.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Attack enemy":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("We're planning an attack on one of our enemies. Will you join us and attack {HERO}?", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("We're planning an attack on one of our enemies. Will you join us and attack a group of {HERO}?", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+
+            }
+            return strat;
         }
     }
 }

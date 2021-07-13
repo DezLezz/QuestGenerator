@@ -108,8 +108,7 @@ namespace QuestGenerator
                 string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
-                    float num;
-                    return x != questGen.IssueOwner.CurrentSettlement && x.Notables.Any<Hero>() && Campaign.Current.Models.MapDistanceModel.GetDistance(x, questGen.IssueOwner.CurrentSettlement, 100f, out num);
+                    return x != this.questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == this.questGiver.MapFaction;
                 });
                 
                 if (alternative)
@@ -146,7 +145,7 @@ namespace QuestGenerator
                 {
                     Settlement newSettlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
-                        return x.OwnerClan == this.settlementTarget.OwnerClan;
+                        return x.OwnerClan == this.settlementTarget.OwnerClan && !this.settlementsToVisit.ContainsKey(x);
                     });
                     this.settlementsToVisitNames.Add(newSettlement.Name.ToString());
                     this.settlementsToVisitTags.Add("no");
@@ -162,7 +161,7 @@ namespace QuestGenerator
                 List<Settlement> tempList = new List<Settlement>();
                 foreach (Settlement s in this.settlementsToVisit.Keys)
                 {
-                    questBase.AddTrackedObject(s);
+                    //questBase.AddTrackedObject(s);
                     tempList.Add(s);
                 }
 
@@ -181,7 +180,6 @@ namespace QuestGenerator
                 this.settlementsToVisit[settlement] = "yes";
                 int i = this.settlementsToVisitNames.IndexOf(settlement.Name.ToString());
                 this.settlementsToVisitTags[i] = "yes";
-                InformationManager.DisplayMessage(new InformationMessage("Settlement Reached"));
                 this.settlementsVisited++;
                 if (!questGen.journalLogs[this.index].HasBeenCompleted())
                 {
@@ -222,6 +220,18 @@ namespace QuestGenerator
 
         public override void updateItemTargets(string targetString, ItemObject targetItem)
         {
+        }
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Visit dangerous place":
+                    strat = new TextObject("I need you to scout around {SETTLEMENT}. Report back to me if you find anything worth considering.", null);
+                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    break;
+            }
+            return strat;
         }
     }
 }

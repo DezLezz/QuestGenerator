@@ -173,7 +173,7 @@ namespace QuestGenerator
 
                 else if (i == 0)
                 {
-                    foreach (Hero hero in questBase.IssueSettlement.Notables)
+                    foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
                     {
                         if (hero != questGen.IssueOwner)
                         {
@@ -198,35 +198,12 @@ namespace QuestGenerator
 
                 if (targetHero == "none")
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("Target Hero is on fire"));
+                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 201"));
                 }
 
             }
 
-            if (this.Action.param[1].target.Contains("item"))
-            {
-                ItemObject newItem = new ItemObject();
-                string itemNumb = this.Action.param[1].target;
-                int amount = 0;
-                var itemList = (from x in Items.AllTradeGoods select x).ToList<ItemObject>();
-
-                int r = rnd.Next(itemList.Count());
-
-                newItem = itemList.ElementAt(r);
-
-                int r2 = rnd.Next(1, 10);
-                this.itemAmountGive = r2;
-
-                if (alternative)
-                {
-                    questGen.alternativeMission.updateItemTargets(itemNumb, newItem);
-                }
-                else
-                {
-                    questGen.chosenMission.updateItemTargets(itemNumb, newItem);
-                }
-                
-            }
+            
 
             if (this.Action.param[2].target.Contains("item"))
             {
@@ -265,6 +242,38 @@ namespace QuestGenerator
                     InformationManager.DisplayMessage(new InformationMessage("amount is zero or less"));
                 }
 
+
+            }
+
+            if (this.Action.param[1].target.Contains("item"))
+            {
+                ItemObject newItem = new ItemObject();
+                string itemNumb = this.Action.param[1].target;
+                var itemList = Items.All;
+
+                int r = rnd.Next(itemList.Count());
+
+                newItem = itemList.ElementAt(r);
+                int r2 = 1;
+                if (this.itemTargetReceive != null)
+                {
+                    r2 = (itemTargetReceive.Value * itemAmountReceive) / newItem.Value;
+                }
+                else if (r2 <= 0)
+                {
+                    r2 = rnd.Next(1, 10);
+                }
+
+                this.itemAmountGive = r2;
+
+                if (alternative)
+                {
+                    questGen.alternativeMission.updateItemTargets(itemNumb, newItem);
+                }
+                else
+                {
+                    questGen.chosenMission.updateItemTargets(itemNumb, newItem);
+                }
 
             }
 
@@ -335,7 +344,6 @@ namespace QuestGenerator
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
 
-            InformationManager.DisplayMessage(new InformationMessage("return exchange dialog flow"));
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here you go.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditionsExchange)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.exchangeConsequences(index, questBase, questGen);
@@ -450,7 +458,6 @@ namespace QuestGenerator
                 bool flag = false;
                 int amountRemaining = this.itemAmountGive;
                 int amountPurchased = 0;
-                InformationManager.DisplayMessage(new InformationMessage("item refined: " + equipmentElement.Item.Name.ToString()));
 
                 var refined = RefinePatch.refineFormulaS;
 
@@ -499,7 +506,6 @@ namespace QuestGenerator
                 bool flag = false;
                 int amountRemaining = itemAmountGive;
                 int amountPurchased = 0;
-                InformationManager.DisplayMessage(new InformationMessage("item smelted: " + equipmentElement.Item.Name.ToString()));
                 int[] smeltingOutputForItem = Campaign.Current.Models.SmithingModel.GetSmeltingOutputForItem(equipmentElement.Item);
 
                 Campaign campaign = Campaign.Current;
@@ -545,7 +551,6 @@ namespace QuestGenerator
             bool flag = false;
             int amountRemaining = this.itemAmountGive;
             int amountPurchased = 0;
-            InformationManager.DisplayMessage(new InformationMessage("item crafted: " + item.Name.ToString()));
 
             if (item == this.itemTargetGive)
             {
@@ -605,6 +610,25 @@ namespace QuestGenerator
                     this.itemTargetReceive = targetItem;
                 }
             }
+        }
+
+        public override TextObject getDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Gather raw materials":
+                    strat = new TextObject("I need you to gather {ITEM}. Can you do that for me?", null);
+                    strat.SetTextVariable("ITEM", this.itemTargetGive.Name);
+                    break;
+                case "Trade for supplies":
+                    strat = new TextObject("I have some {ITEM} here we can exchange for {ITEM2}. Would you be interested in taking a look ?", null);
+                    strat.SetTextVariable("ITEM", this.itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", this.itemTargetGive.Name);
+                    break;
+                    
+            }
+            return strat;
         }
 
     }
