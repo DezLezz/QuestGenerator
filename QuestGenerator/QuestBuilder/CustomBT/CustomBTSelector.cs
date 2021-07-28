@@ -56,6 +56,45 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                 return CustomBTState.empty;
             }
         }
+        public override CustomBTState bringTargetsBack(IssueBase issueBase, QuestGenTestIssue questGen, bool alternative)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    if (node.bringTargetsBack(issueBase, questGen, alternative) == CustomBTState.fail)
+                    {
+                        return CustomBTState.fail;
+                    }
+                }
+                return CustomBTState.success;
+            }
+
+            else
+            {
+                return CustomBTState.empty;
+            }
+        }
+
+        public override CustomBTState bringTargetsBack(QuestBase questBase, QuestGenTestQuest questGen)
+        {
+            if (this.Children.Count() > 0)
+            {
+                foreach (CustomBTNode node in this.Children)
+                {
+                    if (node.bringTargetsBack(questBase, questGen) == CustomBTState.fail)
+                    {
+                        return CustomBTState.fail;
+                    }
+                }
+                return CustomBTState.success;
+            }
+
+            else
+            {
+                return CustomBTState.empty;
+            }
+        }
 
         public override void updateHeroTargets(string targetString, Hero targetHero)
         {

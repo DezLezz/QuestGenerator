@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
 using TaleWorlds.Library;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -32,17 +33,8 @@ namespace QuestGenerator
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
-                
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
 
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("use action - line 40"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -62,25 +54,56 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
-            foreach (SkillObject s in Skills.All)
+            if (!actioncomplete)
             {
-                if (s.Name.ToString() == this.skillName)
+                if (this.index == 0)
                 {
-                    this.currentLevel = Hero.MainHero.GetSkillValue(s);
-                    break;
+                    foreach (SkillObject s in Skills.All)
+                    {
+                        if (s.Name.ToString() == this.skillName)
+                        {
+                            this.currentLevel = Hero.MainHero.GetSkillValue(s);
+                            break;
+                        }
+                    }
+                    int l = rnd.Next(5, 20);
+                    this.levelAmount = l + this.currentLevel;
+                    TextObject textObject = new TextObject("Level up your {SKILL} by at least {AMOUNT} levels.", null);
+                    textObject.SetTextVariable("SKILL", this.skillName);
+                    textObject.SetTextVariable("AMOUNT", this.levelAmount - this.currentLevel);
+                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, this.currentLevel, this.levelAmount, null, false);
+                    this.actionInLog = true;
+
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        foreach (SkillObject s in Skills.All)
+                        {
+                            if (s.Name.ToString() == this.skillName)
+                            {
+                                this.currentLevel = Hero.MainHero.GetSkillValue(s);
+                                break;
+                            }
+                        }
+                        int l = rnd.Next(5, 20);
+                        this.levelAmount = l + this.currentLevel;
+                        TextObject textObject = new TextObject("Level up your {SKILL} by at least {AMOUNT} levels.", null);
+                        textObject.SetTextVariable("SKILL", this.skillName);
+                        textObject.SetTextVariable("AMOUNT", this.levelAmount - this.currentLevel);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, this.currentLevel, this.levelAmount, null, false);
+                        this.actionInLog = true;
+                    }
                 }
             }
-            int l = rnd.Next(5, 20);
-            this.levelAmount = l + this.currentLevel;
-            TextObject textObject = new TextObject("Level up your {SKILL} by at least {AMOUNT} levels.", null);
-            textObject.SetTextVariable("SKILL", this.skillName);
-            textObject.SetTextVariable("AMOUNT", this.levelAmount - this.currentLevel);
-            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, this.currentLevel, this.levelAmount, null, false);
+            
+            
         }
 
         private void useConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!this.actioncomplete)
             {
                 questGen.currentActionIndex++;
                 foreach (SkillObject s in Skills.All)
@@ -92,7 +115,8 @@ namespace QuestGenerator
                     }
                 }
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], this.currentLevel);
-
+                this.actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ,questBase, questGen);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -145,6 +169,49 @@ namespace QuestGenerator
                     break;
             }
             return strat;
+        }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Practice skill":
+                    strat = new TextObject("Practice {SKILL}.", null);
+                    strat.SetTextVariable("SKILL", this.skillName);
+                    break;
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            Dictionary<string, string> skills = new Dictionary<string, string>() { 
+                {"One Handed","fighting with a one-handed short weapon. It will improve your one-handed weapon attack speed and damage." }, {"Two Handed","fighting with a two-handed sword weapon. It will improve your two-handed weapon attack speed and damage." }, {"Polearm","fighting with spears or other polearm-type weapons. It will improve your polearm weapon attack speed and damage." },
+                {"Bow","shooting with a bow and arrow and performing long-distance shots. It will improve your bow damage, accuracy, and usable bow types." },{"Crossbow","shooting enemies with crossbow. It will improve your crossbow reload speed and accuracy." },{"Throwing","hitting enemies with thrown weapons. It will improve your thrown weapon speed, damage, and accuracy." },
+                {"Riding ","exploring map with as much speed as possible and fighting on horseback. It will improve your mount speed, maneuverability, and usable mount types." },{"Athletics ","fighting and moving around the map while on foot. It will improve your running speed." },{"Smithing ","using the smithy to create weapons, refine materials, and smelt old equipment. It will improve your capability to smith more difficult weapons." },
+                {"Scouting ","spoting tracks and hideouts and travel on difficult terrain. It will improve your tracking detection, information level, and spotting distance." },{"Tactics","commanding simulated battles, winning against difficult odds, or escaping encounters by sacrificing troops if necessary. It will improve your simulation advantages and sacrificed troop counts when escaping." },{"Roguery","ransoming prisoners, raiding caravans, leading bandit troops, infiltrating enemy towns, bribery, and escaping from captivity. It will improve your post-battle loot gains." },
+                {"Charm","improving relations with other people, releasing captured nobles or socializing with them, and bartering. It will improve your relationships with people." },{"Leadership","maintaining high morale in your army and when you assemble and lead armies. It will improve your the morale of parties under your command and garrison size." },{"Trade","making a profit from trading and when operating caravans.It will reduce your trade penalty." },
+                {"Steward","gaining party morale from food variety, improving settlement prosperity and building projects, and spending time in your settlements. It will boost your party’s size." },{"Medicine","helping soldiers heal in settlements. It will improve your casualty survival and healing rate." },{"Engineering","building and successfully operating siege engines. It will improve your production of siege engines and buildings and types of siege engines that can be used." }
+            };
+            TextObject strat = new TextObject("empty", null);
+            
+            switch (strategy)
+            {
+                case "Practice skill":
+                    if (!skills.ContainsKey(this.skillName))
+                    {
+                        strat = new TextObject("There has been an erro with {SKILL} skill.", null);
+                    }
+                    else
+                    {
+                        strat = new TextObject("To improve your {SKILL} skill you should try " + skills[this.skillName], null);
+                    }
+                    
+                    strat.SetTextVariable("SKILL", this.skillName);
+                    break;
+            }
+            return strat.ToString();
         }
     }
 }

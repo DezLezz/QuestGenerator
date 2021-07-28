@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
 using Helpers;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -48,32 +49,14 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("capture action - line 55"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("capture action - line 71"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -226,18 +209,45 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
-            if (heroFlag)
+            if (!actioncomplete)
             {
-                questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
-                TextObject textObject = new TextObject("Capture {HERO}.", null);
-                textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    if (heroFlag)
+                    {
+                        questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                        TextObject textObject = new TextObject("Capture {HERO}.", null);
+                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                    else
+                    {
+                        TextObject textObject = new TextObject("Capture a man belonging to the " + this.nonHeroTarget + ".", null);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete || ((questGen.actionsInOrder[this.index - 1].action == "damage" || questGen.actionsInOrder[this.index - 1].action == "kill") && questGen.actionsInOrder[this.index - 1].actionInLog))
+                    {
+                        this.actionInLog = true;
+                        if (heroFlag)
+                        {
+                            questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                            TextObject textObject = new TextObject("Capture {HERO}.", null);
+                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                        else
+                        {
+                            TextObject textObject = new TextObject("Capture a man belonging to the " + this.nonHeroTarget + ".", null);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                    }
+                }
             }
-            else
-            {
-                TextObject textObject = new TextObject("Capture a man belonging to the " + this.nonHeroTarget +  ".", null);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-            }
+            
         }
 
         public override void updateHeroTargets(string targetString, Hero targetHero)
@@ -267,7 +277,7 @@ namespace QuestGenerator
             {
                 foreach (CharacterObject c in rooster.Troops)
                 {
-                    if (c.Culture.Name.ToString() == this.nonHeroTarget)
+                    if (c.Culture.Name.ToString() == this.nonHeroTarget && !secondpart)
                     {
                         this.secondpart = true;
                         questGen.UpdateQuestTaskS(questGen.journalLogs[index], 1);
@@ -286,7 +296,7 @@ namespace QuestGenerator
         {
             if (this.heroTarget != null)
             {
-                if (prisoner == this.heroTarget)
+                if (prisoner == this.heroTarget && !secondpart && capturer == PartyBase.MainParty)
                 {
                     this.secondpart = true;
                     questGen.UpdateQuestTaskS(questGen.journalLogs[index], 1);
@@ -303,7 +313,7 @@ namespace QuestGenerator
         {
             if (this.heroTarget != null)
             {
-                if (victim == this.heroTarget)
+                if (victim == this.heroTarget && !secondpart)
                 {
                     questGen.FailConsequences();
                 }
@@ -314,7 +324,7 @@ namespace QuestGenerator
         {
             if (this.heroTarget != null)
             {
-                if (prisoner == this.heroTarget)
+                if (prisoner == this.heroTarget && !secondpart)
                 {
                     questGen.FailConsequences();
                 }
@@ -335,7 +345,7 @@ namespace QuestGenerator
             TextObject textObject2 = new TextObject("We await your success, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
-            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here he is.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(this.ReturnClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
+            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index <= questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here he is.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(this.ReturnClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.captureConsequences(index, questBase, questGen);
             }).CloseDialog().PlayerOption(new TextObject("I'm working on it.", null), null).NpcLine(textObject2, null, null).CloseDialog().EndPlayerOptions().CloseDialog();
@@ -343,15 +353,18 @@ namespace QuestGenerator
 
         private void captureConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!actioncomplete)
             {
                 questGen.currentActionIndex++;
 
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                 if (this.heroFlag)
                 {
                     GivePrisonerAction.Apply(this.heroTarget.CharacterObject, PartyBase.MainParty, (this.questGiver.PartyBelongedTo != null) ? this.questGiver.PartyBelongedTo.Party : this.questGiver.CurrentSettlement.Party);
+                    MakePeaceAction.Apply(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    //FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
                 }
                 else
                 {
@@ -371,10 +384,6 @@ namespace QuestGenerator
                 }
                 else
                 {
-                    if (this.heroFlag)
-                    {
-                        FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
-                    }
                     questGen.SuccessConsequences();
                 }
             }
@@ -426,5 +435,51 @@ namespace QuestGenerator
             }
             return strat;
         }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Capture Criminal":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Capture {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Capture a {HERO}", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                    }
+
+                    break;
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Capture Criminal":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+            }
+            return strat.ToString();
+        }
+
     }
 }

@@ -9,6 +9,7 @@ using TaleWorlds.Localization;
 using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -38,31 +39,13 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("report action - line 45"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("report action - line 60"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -159,15 +142,40 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (this.heroTarget != null)
+            if (!actioncomplete)
             {
-                questBase.AddTrackedObject(this.heroTarget);
-                TextObject textObject = new TextObject("Report to {HERO}", null);
-                textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                if (this.index == 0)
+                {
+                    if (this.heroTarget != null)
+                    {
+                        this.actionInLog = true;
+                        questBase.AddTrackedObject(this.heroTarget);
+                        TextObject textObject = new TextObject("Report to {HERO}", null);
+                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
 
-                Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(this.heroTarget, this.index, this.questGiver, questBase, questGen), this);
+                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(this.heroTarget, this.index, this.questGiver, questBase, questGen), this);
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (this.heroTarget != null)
+                        {
+                            questBase.AddTrackedObject(this.heroTarget);
+                            TextObject textObject = new TextObject("Report to {HERO}", null);
+                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                            questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+
+                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(this.heroTarget, this.index, this.questGiver, questBase, questGen), this);
+                        }
+                    }
+                }
             }
+            
+            
         }
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
@@ -189,11 +197,12 @@ namespace QuestGenerator
 
         private void reportConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!this.actioncomplete)
             {
                 questGen.currentActionIndex++;
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];

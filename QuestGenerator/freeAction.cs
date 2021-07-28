@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
 using Helpers;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -40,32 +41,14 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("free action - line 47"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("free action - line 63"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -279,15 +262,36 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
-            questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
-            TextObject textObject = new TextObject("Find a way to free {HERO} from {SETTLEMENT}.", null);
-            textObject.SetTextVariable("HERO", this.heroTarget.Name);
-            textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
-            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+            if (!actioncomplete)
+            {
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                    TextObject textObject = new TextObject("Find a way to free {HERO} from {SETTLEMENT}.", null);
+                    textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                    textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                        TextObject textObject = new TextObject("Find a way to free {HERO} from {SETTLEMENT}.", null);
+                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                }
+            }
+            
         }
 
         public override void HeroPrisonerReleased(Hero prisoner, PartyBase party, IFaction capturerFaction, EndCaptivityDetail detail, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
+
             if (prisoner == this.heroTarget)
             {
                 this.freeConsequences(index, questBase, questGen);
@@ -304,19 +308,22 @@ namespace QuestGenerator
 
         private void freeConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!actioncomplete)
             {
                 questGen.currentActionIndex++;
 
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                MakePeaceAction.Apply(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
                 else
                 {
-                    FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    
+                    //FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
                     questGen.SuccessConsequences();
                 }
             }
@@ -342,6 +349,7 @@ namespace QuestGenerator
         public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
         {
         }
+
         public override TextObject getDescription(string strategy)
         {
             TextObject strat = new TextObject("empty", null);
@@ -354,5 +362,33 @@ namespace QuestGenerator
             }
             return strat;
         }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Rescue NPC":
+                    strat = new TextObject("Rescue {HERO}.", null);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    break;
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Rescue NPC":
+                    strat = new TextObject("If you're looking for {HERO}, you can probably find him imprisioned in {SETTLEMENT}.", null);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    break;
+            }
+            return strat.ToString();
+        }
+
     }
 }

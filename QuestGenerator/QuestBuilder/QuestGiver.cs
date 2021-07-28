@@ -62,17 +62,34 @@ namespace QuestGenerator.QuestBuilder
                 motivNode2.name = this.Motivations[r].name;
                 customBTTree.addNode(motivNode2);
 
+                List<Rules> rules2 = new List<Rules>();
+                
+                foreach (Rules ru in rules)
+                {
+                    rules2.Add(new Rules(ru.name, ru.type, -1, ru.actions, ru.weights));
+                }
+
                 Quest q = new Quest(questNumb, this, strategies, rules);
                 QuestNode qNode = new QuestNode(this.Motivations[r].name, q, null);
                 qNode.motivation = this.Motivations[r];
                 q.root = qNode;
                 Expand(q, q.root, questNumb, strategies, rules, motivNode1);
 
+                Strategy chosenStrat = new Strategy();
+
+                foreach(Strategy s in this.Motivations[r].strategies)
+                {
+                    if (customBTTree.Children[0].info == s.name)
+                    {
+                        chosenStrat = s;
+                    }
+                }
+
                 Quest q1 = new Quest(questNumb, this, strategies, rules);
                 QuestNode qNode1 = new QuestNode(this.Motivations[r].name, q1, null);
                 qNode1.motivation = this.Motivations[r];
                 q1.root = qNode1;
-                Expand(q1, q1.root, questNumb, strategies, rules, motivNode2);
+                Expand(q1, q1.root, questNumb, strategies, rules2, motivNode2, chosenStrat);
 
                 return q;
             }
@@ -102,7 +119,7 @@ namespace QuestGenerator.QuestBuilder
 
         }
 
-        public void Expand(Quest q, QuestNode node, int questNumb, List<Strategy> strategies, List<Rules> rules, CustomBTNode currentTreeNode)
+        public void Expand(Quest q, QuestNode node, int questNumb, List<Strategy> strategies, List<Rules> rules, CustomBTNode currentTreeNode, Strategy alreadyChosenStrat = null)
         {
 
             List<Action> sequence = new List<Action>();
@@ -114,9 +131,16 @@ namespace QuestGenerator.QuestBuilder
             {
                 if (node.motivation != null)
                 {
-                    int r = rnd.Next(node.motivation.strategies.Count);
-                    sequence = node.motivation.strategies[r].actions;
-                    currentTreeNode.info = node.motivation.strategies[r].name;
+                    if (alreadyChosenStrat == null)
+                    {
+                        int r = rnd.Next(node.motivation.strategies.Count);
+                        sequence = node.motivation.strategies[r].actions;
+                        currentTreeNode.info = node.motivation.strategies[r].name;
+                    } 
+                    else
+                    {
+
+                    }
 
                 }
                 else
@@ -136,6 +160,9 @@ namespace QuestGenerator.QuestBuilder
 
                         CustomBTNode newNode = new CustomBTMotivation(null, CustomBTType.motivation, currentTreeNode);
                         newNode.name = this.Motivations[r].name;
+                        newNode.subquest_info = node.parentNode.parentNode.action.name.Replace("<", "").Replace(">", "");
+                        newNode.origin_quest_motiv = q.root.motivation.name;
+                        //InformationManager.DisplayMessage(new InformationMessage(newNode.info));
                         currentTreeNode.addNode(newNode);
 
                     }
@@ -333,7 +360,7 @@ namespace QuestGenerator.QuestBuilder
 
         public List<float> updateWeights(List<List<Action>> ruleActions, List<float> w, int index, int depth)
         {
-            w[index] = (float)(w[index] / Math.Pow(depth, 3));
+            w[index] = (float)(w[index] / Math.Pow(depth, 2));
             float portion = (1 - w[index]) / w.Count;
 
             for (int i = 0; i < w.Count; i++)

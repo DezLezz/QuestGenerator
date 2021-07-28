@@ -15,6 +15,8 @@ namespace QuestGenerator.QuestBuilder
 
         public List<Action> actions { get; set; }
 
+        public Strategy() { }
+
         public Strategy(string motivation, string name, int index, List<Action> actions)
         {
             Motivation = motivation;

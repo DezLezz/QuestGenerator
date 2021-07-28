@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
 using Helpers;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -38,17 +39,7 @@ namespace QuestGenerator
             if (this.heroTarget == null && heroFlag)
             {
                 var setName = this.Action.param[1].target;
-
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("damage action - line 46"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
             if (this.settlementTarget == null && settlementFlag)
             {
@@ -68,17 +59,8 @@ namespace QuestGenerator
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("damage action - line 76"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
             }
         }
 
@@ -110,7 +92,7 @@ namespace QuestGenerator
             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
             {
                 bool war = false;
-                if (x.MapFaction != null)
+                if (x.MapFaction != null && this.questGiver != null)
                 {
                     if (x.MapFaction.IsAtWarWith(this.questGiver.MapFaction))
                     {
@@ -209,7 +191,7 @@ namespace QuestGenerator
                         }
                         else if (i == 0)
                         {
-                            closeParties = mp.GetPartiesAroundPosition(questBase.IssueSettlement.Position2D, 150);
+                            closeParties = mp.GetPartiesAroundPosition(this.questGiver.CurrentSettlement.Position2D, 150);
                         }
 
                         foreach (MobileParty m in closeParties)
@@ -338,25 +320,59 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
-            if (heroFlag)
+            if (!actioncomplete)
             {
-                questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
-                TextObject textObject = new TextObject("Attack {HERO}'s party.", null);
-                textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    if (heroFlag)
+                    {
+                        questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                        TextObject textObject = new TextObject("Attack {HERO}'s party.", null);
+                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                    else if (settlementFlag)
+                    {
+                        questBase.AddTrackedObject(this.settlementTarget);
+                        TextObject textObject = new TextObject("Completly raid the Village of {SETTLEMENT}.", null);
+                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                    else
+                    {
+                        TextObject textObject = new TextObject("Damage a party of " + this.nonHeroTarget + ".", null);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (heroFlag)
+                        {
+                            questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                            TextObject textObject = new TextObject("Attack {HERO}'s party.", null);
+                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                        else if (settlementFlag)
+                        {
+                            questBase.AddTrackedObject(this.settlementTarget);
+                            TextObject textObject = new TextObject("Completly raid the Village of {SETTLEMENT}.", null);
+                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                        else
+                        {
+                            TextObject textObject = new TextObject("Damage a party of " + this.nonHeroTarget + ".", null);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                    }
+                }
             }
-            else if (settlementFlag)
-            {
-                questBase.AddTrackedObject(this.settlementTarget);
-                TextObject textObject = new TextObject("Completly raid the Village of {SETTLEMENT}.", null);
-                textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-            }
-            else
-            {
-                TextObject textObject = new TextObject("Damage a party of " + this.nonHeroTarget + ".", null);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-            }
+            
         }
 
         public override void RaidCompletedEvent(BattleSideEnum winnerSide, MapEvent mapEvent, int index, QuestGenTestQuest questGen, QuestBase questBase)
@@ -396,11 +412,18 @@ namespace QuestGenerator
 
         private void damageConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!actioncomplete)
             {
                 questGen.currentActionIndex++;
 
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                if (this.heroFlag || this.settlementFlag)
+                {
+                    MakePeaceAction.Apply(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    //FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                }
 
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
@@ -408,10 +431,7 @@ namespace QuestGenerator
                 }
                 else
                 {
-                    if (this.heroFlag || this.settlementFlag)
-                    {
-                        FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
-                    }
+                    
                     questGen.SuccessConsequences();
                 }
             }
@@ -592,5 +612,295 @@ namespace QuestGenerator
             }
             return strat;
         }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Kill pests":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {Settlement}.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+
+                    }
+                case "Kill enemies":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {Settlement}.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Revenge, Justice":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Take revenge on {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Take revenge on {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Take revenge on a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Attack threatening entities":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Attack {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Attack {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Attack {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Create Diversion":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Create a Diversion against {HERO}.", null);
+                        strat.SetTextVariable("FACTION", this.heroTarget.MapFaction.Name);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Create a Diversion against {SETTLEMENT}.", null);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Create a Diversion against {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Attack enemy":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Attack {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Attack {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Attack {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+
+                case "Practice combat":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Pratice combat against {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Pratice combat against {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Pratice combat against a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Kill pests":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+                case "Kill enemies":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+                case "Revenge, Justice":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+                case "Attack threatening entities":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+                case "Create Diversion":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+                case "Attack enemy":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+
+                case "Practice combat":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else if (this.settlementFlag)
+                    {
+                        strat = new TextObject("{SETTLEMENT} is a village located not far from here. It belongs to one of our enemies the {FACTION} faction.", null);
+                        strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        strat.SetTextVariable("FACTION", this.settlementTarget.MapFaction.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+                    break;
+            }
+            return strat.ToString();
+        }
+
     }
 }

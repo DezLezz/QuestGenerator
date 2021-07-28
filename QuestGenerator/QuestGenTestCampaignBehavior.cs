@@ -110,6 +110,11 @@ namespace QuestGenerator
 
         private bool ConditionsHold(Hero issueGiver)
         {
+            if (issueGiver == null)
+            {
+                return false;
+            }
+
             if (issueGiver.CurrentSettlement == null)
             {
                 return false;
@@ -141,7 +146,7 @@ namespace QuestGenerator
             if (this.missions.IsEmpty())
             {
                 int i = rnd.Next(1, 6);
-                if (i == 1)
+                if (i == 0)
                 {
                     QuestGen.GenerateOne();
                     this.missions = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path);
@@ -201,7 +206,7 @@ namespace QuestGenerator
             public Hero missionHero;
 
             [SaveableField(116)]
-            public int id = 0;
+            public string id = "";
 
             public CustomBTNode chosenMission;
 
@@ -244,22 +249,14 @@ namespace QuestGenerator
                     this.alternativeMission.run(CustomBTStep.issueQ, (IssueBase)this, this, true);
 
                 }
-
+                this.id = this.IssueOwner.Name.ToString() + (int)this.IssueOwner.Age;
                 saveMissions();
             }
 
             private void saveMissions()
             {
-                int r = rnd.Next(1, 9999999);
-                this.id = r;
+                
                 string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + ".xml";
-
-                while (File.Exists(path2))
-                {
-                    r = rnd.Next(1, 9999999);
-                    this.id = r;
-                    path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + ".xml";
-                }
 
                 XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path2, new List<CustomBTNode>() { this.chosenMission });
 
@@ -277,16 +274,282 @@ namespace QuestGenerator
             }
             public override TextObject Title {
                 get {
-                    TextObject textObject;
+
+                    string textObject = "";
+                    string strat = "";
                     if (chosenMission.nodeType == CustomBTType.motivation)
                     {
-                        textObject = new TextObject(this.chosenMission.name + ": " + this.chosenMission.info, null);
+                        strat = this.chosenMission.info;
                     }
                     else
                     {
-                        textObject = new TextObject(this.chosenMission.Children[0].name + ": " + this.chosenMission.Children[0].info, null);
+                        strat = this.chosenMission.Children[0].info;
                     }
-                    return textObject;
+                    TextObject stratObj = new TextObject("empty", null);
+                    switch (strat)
+                    {
+                        case "Deliver item for study":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Interview NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Obtain luxuries":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Kill pests":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Obtain rare items":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Kill enemies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Visit dangerous place":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Revenge, Justice":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Capture Criminal":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "capture")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Check on NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Recover lost/stolen item":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Rescue NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "free")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Attack threatening entities":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Create Diversion":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Recruit":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Attack enemy":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal stuff":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Gather raw materials":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal valuables for resale":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice combat":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice skill":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "use")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Deliver supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Trade for supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "exchange")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                    }
+
+                    if (stratObj.ToString() == "empty")
+                    {
+                        if (chosenMission.nodeType == CustomBTType.motivation)
+                        {
+                            textObject += this.chosenMission.info;
+                        }
+                        else
+                        {
+                            textObject += this.chosenMission.Children[0].info;
+                        }
+                    }
+                    else
+                    {
+                        textObject += stratObj.ToString();
+                    }
+
+                    TextObject t = new TextObject(textObject, null);
+
+                    return t;
+
                 }
             }
             public override TextObject Description {
@@ -305,6 +568,51 @@ namespace QuestGenerator
             }
             public override TextObject IssueBriefByIssueGiver {
                 get {
+                    TextObject textObject;
+                    if (chosenMission.nodeType == CustomBTType.motivation)
+                    {
+                        textObject = new TextObject(QuestHelperClass.MotivationCalculator(this.chosenMission.name), null);
+                    }
+                    else
+                    {
+                        textObject = new TextObject(QuestHelperClass.MotivationCalculator(this.chosenMission.Children[0].name), null);
+                    }
+
+                    if (this.chosenMission.subquest_info != "none" && this.chosenMission.subquest_info != null)
+                    {
+                        if (this.chosenMission.subquest_info == "get")
+                        {
+                            TextObject get = new TextObject("You're collecting materials for {HERO} right? That rascal has been owning me a favor for a while. Do this task for me and I'll consider it paid. " + textObject.ToString(), null);
+                            get.SetTextVariable("HERO", this.chosenMission.origin_quest_hero);
+                            return get;
+                        }
+                        else if (this.chosenMission.subquest_info == "prepare")
+                        {
+                            TextObject prepare = new TextObject(QuestHelperClass.MotivationCalculator(this.chosenMission.name) + textObject.ToString(), null);
+                            prepare.SetTextVariable("HERO", this.chosenMission.origin_quest_hero);
+                            return prepare;
+                        }
+                        else if (this.chosenMission.subquest_info == "learn")
+                        {
+                            TextObject learn = new TextObject("You're looking for information? I could give it to you for free... Or you could do something for me first. " + textObject.ToString(), null);
+
+                            return learn;
+                        }
+                    }
+
+                    return textObject;
+
+                }
+            }
+
+            public override TextObject IssueAcceptByPlayer {
+                get {
+                    return new TextObject("What do I need to do then?", null);
+                }
+            }
+            public override TextObject IssueQuestSolutionExplanationByIssueGiver {
+                get {
+
                     string textObject = "";
                     string strat = "";
                     if (chosenMission.nodeType == CustomBTType.motivation)
@@ -491,7 +799,7 @@ namespace QuestGenerator
                         case "Gather raw materials":
                             foreach (actionTarget a in this.actionsInOrder)
                             {
-                                if (a.action == "take" || a.action == "gather" || a.action =="exchange")
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
                                 {
                                     stratObj = a.getDescription(strat);
                                     break;
@@ -559,8 +867,8 @@ namespace QuestGenerator
                             }
                             break;
                     }
-                    
-                    if (stratObj.ToString() =="empty")
+
+                    if (stratObj.ToString() == "empty")
                     {
                         textObject += QuestHelperClass.DescriptionCalculator(strat);
                     }
@@ -576,18 +884,6 @@ namespace QuestGenerator
                     t.SetTextVariable("GOLD_ICON", "{=!}<img src=\"Icons\\Coin@2x\" extend=\"8\">");
 
                     return t;
-                }
-            }
-
-            public override TextObject IssueAcceptByPlayer {
-                get {
-                    return new TextObject("Anything else I need to know?", null);
-                }
-            }
-            public override TextObject IssueQuestSolutionExplanationByIssueGiver {
-                get {
-
-                    return new TextObject("No, that should be all.", null);
                 }
             }
             public override TextObject IssueQuestSolutionAcceptByPlayer {
@@ -661,30 +957,16 @@ namespace QuestGenerator
                 this.actionsInOrder = new List<actionTarget>();
                 string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + ".xml";
                 this.chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
-                this.chosenMission.run(CustomBTStep.actionTarget, (IssueBase)this, this, false);
 
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
-                {
-                    var aT = this.actionsInOrder[i];
+                this.chosenMission.bringTargetsBack((IssueBase)this, this, false);
 
-                    aT.bringTargetsBack();
-                }
-                this.chosenMission.run(CustomBTStep.issueQ, (IssueBase)this, this, false);
                 if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + "_alternative" + ".xml"))
                 {
                     this.alternativeActionsInOrder = new List<actionTarget>();
                     string path2_alt = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + this.id + "_alternative" + ".xml";
                     this.alternativeMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2_alt)[0];
 
-                    this.alternativeMission.run(CustomBTStep.actionTarget, (IssueBase)this, this, true);
-
-                    for (int i = 0; i < this.alternativeActionsInOrder.Count; i++)
-                    {
-                        var aT = this.alternativeActionsInOrder[i];
-
-                        aT.bringTargetsBack();
-                    }
-                    this.alternativeMission.run(CustomBTStep.issueQ, (IssueBase)this, this, true);
+                    this.alternativeMission.bringTargetsBack((IssueBase)this, this, true);
                 }
 
 
@@ -740,9 +1022,268 @@ namespace QuestGenerator
 
             public override TextObject Title {
                 get {
-                    TextObject textObject = new TextObject(this.chosenMission.name + ": " +this.chosenMission.info, null);
-                    if (alternativeFlag) textObject = new TextObject(textObject.ToString() + " alternative path given by " + this.actionsInOrder[0].questGiver.Name.ToString() , null);
-                    return textObject;
+
+                    string textObject = "";
+                    string strat = "";
+                    strat = this.chosenMission.info;
+                    TextObject stratObj = new TextObject("empty", null);
+                    switch (strat)
+                    {
+                        case "Deliver item for study":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Interview NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Obtain luxuries":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Kill pests":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Obtain rare items":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Kill enemies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Visit dangerous place":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Revenge, Justice":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Capture Criminal":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "capture")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Check on NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Recover lost/stolen item":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Rescue NPC":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "free")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Attack threatening entities":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Create Diversion":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Recruit":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Attack enemy":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal stuff":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Gather raw materials":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal valuables for resale":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice combat":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice skill":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "use")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Deliver supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Trade for supplies":
+                            foreach (actionTarget a in this.actionsInOrder)
+                            {
+                                if (a.action == "exchange")
+                                {
+                                    stratObj = a.getTitle(strat);
+                                    break;
+                                }
+                            }
+                            break;
+                    }
+
+                    if (stratObj.ToString() == "empty")
+                    {
+                        textObject += this.chosenMission.info;
+                    }
+                    else
+                    {
+                        textObject += stratObj.ToString();
+                    }
+                    if (alternativeFlag) textObject +=  " alternative path given by " + this.actionsInOrder[0].questGiver.Name.ToString();
+
+                    TextObject t = new TextObject(textObject, null);
+
+                    return t;
                 }
             }
 
@@ -792,7 +1333,6 @@ namespace QuestGenerator
                 {
                     this.QuestAcceptedConsequences();
                 }
-
             }
             protected override void InitializeQuestOnGameLoad()
             {
@@ -800,13 +1340,6 @@ namespace QuestGenerator
                 this.SetDialogs();
                 loadActionTargets();
                 this.currentAction = this.actionsInOrder[this.currentActionIndex];
-
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
-                {
-                    var aT = this.actionsInOrder[i];
-
-                    aT.bringTargetsBack();
-                }
 
                 for (int i = 0; i < this.actionsInOrder.Count; i++)
                 {
@@ -852,13 +1385,18 @@ namespace QuestGenerator
 
             }
 
+            public void OnSaveOverEvent(bool isSuccessful)
+            {
+                if (isSuccessful) saveActionTargets();
+            }
+
             private void saveActionTargets()
             {
                 string id = base.StringId;
 
-                string path1 = @"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + ".xml";
+                //string path1 = @"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + ".xml";
                 string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
-                XmlSerialization.WriteToXmlFile<List<actionTarget>>(path1, this.actionsInOrder);
+                //XmlSerialization.WriteToXmlFile<List<actionTarget>>(path1, this.actionsInOrder);
                 XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path2, new List<CustomBTNode>() { this.chosenMission });
             }
 
@@ -866,36 +1404,37 @@ namespace QuestGenerator
             {
                 string id = base.StringId;
 
-                string path1 = @"..\..\Modules\QuestGenerator\SaveFiles\actionsSaveFile_" + id + ".xml";
                 string path2 = @"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + ".xml";
-                this.actionsInOrder = XmlSerialization.ReadFromXmlFile<List<actionTarget>>(path1);
+                this.actionsInOrder = new List<actionTarget>();
                 this.chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
 
-                if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml") && alternativeFlag == false)
-                {
-                    foreach(QuestBase qb in Campaign.Current.QuestManager.Quests)
-                    {
-                        if (qb.StringId == base.StringId + "_alternative")
-                        {
-                            this.alternativeQuest = (QuestGenTestQuest)qb;
-                            this.alternativeQuest.RegisterEvents();
-                            this.alternativeQuest.InitializeQuestOnGameLoad();
-                            using (List<QuestTaskBase>.Enumerator enumerator3 = this.alternativeQuest.TaskList.GetEnumerator())
-                            {
-                                while (enumerator3.MoveNext())
-                                {
-                                    QuestTaskBase questTaskBase = enumerator3.Current;
-                                    if (questTaskBase.IsActive)
-                                    {
-                                        questTaskBase.SetReferences();
-                                        questTaskBase.AddTaskDialogs();
-                                    }
-                                }
-                                continue;
-                            }
-                        }
-                    }
-                }
+                this.chosenMission.bringTargetsBack((QuestBase)this, this);
+
+                //if (File.Exists(@"..\..\Modules\QuestGenerator\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml") && alternativeFlag == false)
+                //{
+                //    foreach(QuestBase qb in Campaign.Current.QuestManager.Quests)
+                //    {
+                //        if (qb.StringId == base.StringId + "_alternative")
+                //        {
+                //            this.alternativeQuest = (QuestGenTestQuest)qb;
+                //            this.alternativeQuest.RegisterEvents();
+                //            this.alternativeQuest.InitializeQuestOnGameLoad();
+                //            using (List<QuestTaskBase>.Enumerator enumerator3 = this.alternativeQuest.TaskList.GetEnumerator())
+                //            {
+                //                while (enumerator3.MoveNext())
+                //                {
+                //                    QuestTaskBase questTaskBase = enumerator3.Current;
+                //                    if (questTaskBase.IsActive)
+                //                    {
+                //                        questTaskBase.SetReferences();
+                //                        questTaskBase.AddTaskDialogs();
+                //                    }
+                //                }
+                //                continue;
+                //            }
+                //        }
+                //    }
+                //}
                 
             }
 
@@ -977,8 +1516,10 @@ namespace QuestGenerator
                 CampaignEvents.PrisonersChangeInSettlement.AddNonSerializedListener(this, new Action<Settlement, FlattenedTroopRoster, Hero, bool>(this.PrisonersChangeInSettlement));
                 CampaignEvents.HeroGainedSkill.AddNonSerializedListener(this, new Action<Hero, SkillObject, bool, int, bool>(this.HeroGainedSkill));
                 CampaignEvents.RaidCompletedEvent.AddNonSerializedListener(this, new Action<BattleSideEnum, MapEvent>(this.RaidCompletedEvent));
+                CampaignEvents.ItemsLooted.AddNonSerializedListener(this, new Action<ItemRoster>(this.ItemsLooted));
+                CampaignEvents.MapEventStarted.AddNonSerializedListener(this, new Action<MapEvent, PartyBase, PartyBase>(this.MapEventStarted));
+                CampaignEvents.OnSaveOverEvent.AddNonSerializedListener(this, new Action<bool>(this.OnSaveOverEvent));
                 //CampaignEvents.OnSettlementLeftEvent.AddNonSerializedListener(this, new Action<MobileParty, Settlement>(this.OnSettlementLeft));
-                //CampaignEvents.MapEventEnded.AddNonSerializedListener(this, new Action<MapEvent>(this.OnMapEventEnded));
                 //CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, new Action(this.OnDailyTick));
                 //CampaignEvents.HourlyTickEvent.AddNonSerializedListener(this, new Action(this.OnHourlyTick));
                 //CampaignEvents.WarDeclared.AddNonSerializedListener(this, new Action<IFaction, IFaction>(this.OnWarDeclared));
@@ -990,37 +1531,34 @@ namespace QuestGenerator
             {
                 if (party == MobileParty.MainParty && settlement.GatePosition.NearlyEquals(MobileParty.MainParty.Position2D, MobileParty.MainParty.SeeingRange + 2f))
                 {
-                    switch (this.currentAction.action)
+                    switch (this.actionsInOrder[currentActionIndex].action)
                     {
                         case "goto":
-                            this.currentAction.OnSettlementEnteredQuest(party, settlement, hero, -1, this, (QuestBase)this);
+                            this.actionsInOrder[currentActionIndex].OnSettlementEnteredQuest(party, settlement, hero, currentActionIndex, this, (QuestBase)this);
                             break;
                         case "explore":
-                            this.currentAction.OnSettlementEnteredQuest(party, settlement, hero, -1, this, (QuestBase)this);
+                            this.actionsInOrder[currentActionIndex].OnSettlementEnteredQuest(party, settlement, hero, currentActionIndex, this, (QuestBase)this);
                             break;
                     }
+                    
                 }
             }
 
             private void OnPlayerInventoryExchange(List<ValueTuple<ItemRosterElement, int>> purchasedItems, List<ValueTuple<ItemRosterElement, int>> soldItems, bool isTrading)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "give":
-                            aT.OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, i, this, (QuestBase)this);
-                            break;
+                    //case "give":
+                    //    aT.OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, i, this, (QuestBase)this);
+                    //    break;
 
-                        case "gather":
-                            aT.OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, i, this, (QuestBase)this);
-                            break;
+                    case "gather":
+                        this.actionsInOrder[currentActionIndex].OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, currentActionIndex, this, (QuestBase)this);
+                        break;
 
-                        case "exchange":
-                            aT.OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, i, this, (QuestBase)this);
-                            break;
-                    }
+                    //case "exchange":
+                    //    this.actionsInOrder[currentActionIndex].OnPlayerInventoryExchangeQuest(purchasedItems, soldItems, isTrading, currentActionIndex, this, (QuestBase)this);
+                    //    break;
 
                 }
 
@@ -1030,21 +1568,18 @@ namespace QuestGenerator
             {
                 if (party.IsMainParty)
                 {
-                    for (int i = 0; i < this.actionsInOrder.Count; i++)
-                    {
-                        var aT = this.actionsInOrder[i];
-                        switch (aT.action)
-                        {
-                            case "give":
-                                aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
-                                break;
+                    //switch (this.actionsInOrder[currentActionIndex].action) 
+                    //{ 
+                        //case "give":
+                        //    aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
+                        //    break;
 
-                            case "exchange":
-                                aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
-                                break;
-                        }
+                        //case "exchange":
+                        //    this.actionsInOrder[currentActionIndex].OnPartyConsumedFoodQuest(party, currentActionIndex, this, (QuestBase)this);
+                        //    break;
 
-                    }
+                        
+                    //}
                 }
             }
 
@@ -1052,21 +1587,17 @@ namespace QuestGenerator
             {
                 if (supporterHero == Hero.MainHero || supportedHero == Hero.MainHero)
                 {
-                    for (int i = 0; i < this.actionsInOrder.Count; i++)
-                    {
-                        var aT = this.actionsInOrder[i];
-                        switch (aT.action)
-                        {
-                            case "give":
-                                aT.OnHeroSharedFoodWithAnotherHeroQuest(supporterHero, supportedHero, influence, i, this, (QuestBase)this);
-                                break;
+                    //switch (this.actionsInOrder[currentActionIndex].action)
+                    //{
+                        //case "give":
+                        //    aT.OnHeroSharedFoodWithAnotherHeroQuest(supporterHero, supportedHero, influence, i, this, (QuestBase)this);
+                        //    break;
 
-                            case "exchange":
-                                aT.OnHeroSharedFoodWithAnotherHeroQuest(supporterHero, supportedHero, influence, i, this, (QuestBase)this);
-                                break;
-                        }
-
-                    }
+                        //case "exchange":
+                        //    this.actionsInOrder[currentActionIndex].OnHeroSharedFoodWithAnotherHeroQuest(supporterHero, supportedHero, influence, i, this, (QuestBase)this);
+                        //    break;
+                        
+                    //}
                 }
             }
 
@@ -1074,57 +1605,51 @@ namespace QuestGenerator
             {
                 if (hero.PartyBelongedTo == MobileParty.MainParty)
                 {
-                    for (int i = 0; i < this.actionsInOrder.Count; i++)
+                    switch (this.actionsInOrder[currentActionIndex].action)
                     {
-                        var aT = this.actionsInOrder[i];
-                        switch (aT.action)
-                        {
-                            case "gather":
-                                aT.OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
-                                break;
+                        case "gather":
+                            this.actionsInOrder[currentActionIndex].OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, currentActionIndex, this, (QuestBase)this);
+                            break;
 
-                            case "exchange":
-                                aT.OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
-                                break;
-                        }
-
+                        //case "exchange":
+                        //    this.actionsInOrder[currentActionIndex].OnEquipmentSmeltedByHeroEventQuest(hero, equipmentElement, i, this, (QuestBase)this);
+                        //    break;
+                        
                     }
                 }
             }
 
             private void OnNewItemCraftedEvent(ItemObject item, Crafting.OverrideData crafted, bool flag)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "gather":
-                            aT.OnNewItemCraftedEventQuest(item, crafted, flag, i, this, (QuestBase)this);
-                            break;
-                        case "exchange":
-                            aT.OnNewItemCraftedEventQuest(item, crafted, flag, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "gather":
+                        this.actionsInOrder[currentActionIndex].OnNewItemCraftedEventQuest(item, crafted, flag, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    case "exchange":
+                        this.actionsInOrder[currentActionIndex].OnNewItemCraftedEventQuest(item, crafted, flag, currentActionIndex, this, (QuestBase)this);
+                        break;
+                   
                 }
             }
 
             private void OnItemProducedEvent(ItemObject itemObject, Settlement settlement, int count)
             {
-
+                switch (this.actionsInOrder[currentActionIndex].action)
+                {
+                    case "gather":
+                        this.actionsInOrder[currentActionIndex].OnItemProducedEventQuest(itemObject, settlement, count, currentActionIndex, this, (QuestBase)this);
+                        break;
+                }
             }
 
             private void OnQuestCompletedEvent(QuestBase quest, QuestCompleteDetails questCompleteDetails)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "quest":
-                            aT.OnQuestCompletedEventQuest(quest, questCompleteDetails, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "quest":
+                        this.actionsInOrder[currentActionIndex].OnQuestCompletedEventQuest(quest, questCompleteDetails, currentActionIndex, this, (QuestBase)this);
+                        break;
                 }
 
                 if (alternativeFlag)
@@ -1145,130 +1670,244 @@ namespace QuestGenerator
 
             private void OnPrisonerTakenEvent(FlattenedTroopRoster rooster)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                int cAIndex = 0;
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "capture":
-                            aT.OnPrisonerTakenEvent(rooster, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "capture":
+                        this.actionsInOrder[currentActionIndex].OnPrisonerTakenEvent(rooster, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    case "kill":
+                        cAIndex = currentActionIndex;
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "capture")
+                            {
+                                this.actionsInOrder[cAIndex + 1].OnPrisonerTakenEvent(rooster, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
+                    case "damage":
+                        cAIndex = currentActionIndex;
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "capture")
+                            {
+                                this.actionsInOrder[cAIndex + 1].OnPrisonerTakenEvent(rooster, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
                 }
             }
 
             private void HeroPrisonerTaken(PartyBase capturer, Hero prisoner)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                int cAIndex = 0;
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "capture":
-                            aT.HeroPrisonerTaken(capturer, prisoner, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "capture":
+                        this.actionsInOrder[currentActionIndex].HeroPrisonerTaken(capturer, prisoner, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    case "kill":
+                        cAIndex = currentActionIndex;
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "capture")
+                            {
+                                this.actionsInOrder[cAIndex + 1].HeroPrisonerTaken(capturer, prisoner, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
+                    case "damage":
+                        cAIndex = currentActionIndex;
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "capture")
+                            {
+                                this.actionsInOrder[cAIndex + 1].HeroPrisonerTaken(capturer, prisoner, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
                 }
             }
 
             private void HeroKilledEvent(Hero victim, Hero killer, KillCharacterAction.KillCharacterActionDetail detail, bool showNotification = true)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "capture":
-                            aT.HeroKilledEvent(victim, killer, detail, showNotification, i, this, (QuestBase)this);
-                            break;
-                        case "kill":
-                            aT.HeroKilledEvent(victim, killer, detail, showNotification, i, this, (QuestBase)this);
-                            break;
-                        case "damage":
-                            aT.HeroKilledEvent(victim, killer, detail, showNotification, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "capture":
+                        this.actionsInOrder[currentActionIndex].HeroKilledEvent(victim, killer, detail, showNotification, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    case "kill":
+                        this.actionsInOrder[currentActionIndex].HeroKilledEvent(victim, killer, detail, showNotification, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    case "damage":
+                        this.actionsInOrder[currentActionIndex].HeroKilledEvent(victim, killer, detail, showNotification, currentActionIndex, this, (QuestBase)this);
+                        break;
                 }
             }
 
+
             private void MapEventEnded(MapEvent mapEvent)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                int cAIndex = 0;
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "kill":
-                            aT.MapEventEnded(mapEvent, i, this, (QuestBase)this);
-                            break;
-                        case "take":
-                            aT.MapEventEnded(mapEvent, i, this, (QuestBase)this);
-                            break;
-                        case "damage":
-                            aT.MapEventEnded(mapEvent, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "kill":
+                        cAIndex = currentActionIndex;
+                        this.actionsInOrder[cAIndex].MapEventEnded(mapEvent, cAIndex, this, (QuestBase)this);
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "take")
+                            {
+                                this.actionsInOrder[cAIndex + 1].MapEventEnded(mapEvent, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
+                    case "take":
+                        this.actionsInOrder[currentActionIndex].MapEventEnded(mapEvent, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    case "damage":
+                        cAIndex = currentActionIndex;
+                        this.actionsInOrder[cAIndex].MapEventEnded(mapEvent, cAIndex, this, (QuestBase)this);
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "take")
+                            {
+                                this.actionsInOrder[cAIndex + 1].MapEventEnded(mapEvent, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
+                    
                 }
             }
             
             private void HeroPrisonerReleased (Hero prisoner, PartyBase party, IFaction capturerFaction, EndCaptivityDetail detail)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                foreach (actionTarget a in this.actionsInOrder)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "capture":
-                            aT.HeroPrisonerReleased(prisoner, party, capturerFaction, detail, i, this, (QuestBase)this);
-                            break;
-                        case "free":
-                            aT.HeroPrisonerReleased(prisoner, party, capturerFaction, detail, i, this, (QuestBase)this);
-                            break;
-                    }
+                    if (a.action == "capture") this.actionsInOrder[currentActionIndex].HeroPrisonerReleased(prisoner, party, capturerFaction, detail, currentActionIndex, this, (QuestBase)this);
+                }
+                switch (this.actionsInOrder[currentActionIndex].action)
+                {
+                    case "free":
+                        this.actionsInOrder[currentActionIndex].HeroPrisonerReleased(prisoner, party, capturerFaction, detail, currentActionIndex, this, (QuestBase)this);
+                        break;
                 }
             }
 
             private void PrisonersChangeInSettlement(Settlement settlement, FlattenedTroopRoster prisonerRoster, Hero prisonerHero, bool isReleased)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "free":
-                            aT.PrisonersChangeInSettlement(settlement, prisonerRoster, prisonerHero, isReleased, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "free":
+                        this.actionsInOrder[currentActionIndex].PrisonersChangeInSettlement(settlement, prisonerRoster, prisonerHero, isReleased, currentActionIndex, this, (QuestBase)this);
+                        break;
                 }
             }
 
             private void HeroGainedSkill(Hero hero, SkillObject skill, bool hasNewPerk, int change, bool shouldNotify)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "use":
-                            aT.HeroGainedSkill(hero, skill, hasNewPerk, change, shouldNotify, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "use":
+                        this.actionsInOrder[currentActionIndex].HeroGainedSkill(hero, skill, hasNewPerk, change, shouldNotify, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    
                 }
             }
 
             private void RaidCompletedEvent(BattleSideEnum winnerSide, MapEvent mapEvent)
             {
-                for (int i = 0; i < this.actionsInOrder.Count; i++)
+                switch (this.actionsInOrder[currentActionIndex].action)
                 {
-                    var aT = this.actionsInOrder[i];
-                    switch (aT.action)
-                    {
-                        case "damage":
-                            aT.RaidCompletedEvent(winnerSide, mapEvent, i, this, (QuestBase)this);
-                            break;
-                    }
+                    case "damage":
+                        this.actionsInOrder[currentActionIndex].RaidCompletedEvent(winnerSide, mapEvent, currentActionIndex, this, (QuestBase)this);
+                        break;
+                    
                 }
             }
+
+            private void ItemsLooted(ItemRoster items)
+            {
+                //int cAIndex = 0;
+                switch (this.actionsInOrder[currentActionIndex].action)
+                {
+                    //case "give":
+                    //    aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
+                    //    break;
+
+                    //case "exchange":
+                    //    this.actionsInOrder[currentActionIndex].OnPartyConsumedFoodQuest(party, currentActionIndex, this, (QuestBase)this);
+                    //    break;
+                    //case "damage":
+                    //    cAIndex = currentActionIndex;
+                    //    if (cAIndex < actionsInOrder.Count-1)
+                    //    {
+                    //        if (this.actionsInOrder[cAIndex + 1].action == "take")
+                    //        {
+                    //            this.actionsInOrder[cAIndex + 1].ItemsLooted(items, cAIndex + 1, this, (QuestBase)this);
+                    //        }
+                    //    }
+                    //    break;
+                    //case "kill":
+                    //    cAIndex = currentActionIndex;
+                    //    if (cAIndex < actionsInOrder.Count-1)
+                    //    {
+                    //        if (this.actionsInOrder[cAIndex + 1].action == "take")
+                    //        {
+                    //            this.actionsInOrder[cAIndex + 1].ItemsLooted(items, cAIndex + 1, this, (QuestBase)this);
+                    //        }
+                    //    }
+                    //    break;
+                    //case "take":
+                    //    this.actionsInOrder[currentActionIndex].ItemsLooted(items, currentActionIndex, this, (QuestBase)this);
+                    //    break;
+                    case "gather":
+                        this.actionsInOrder[currentActionIndex].ItemsLooted(items, currentActionIndex, this, (QuestBase)this);
+                        break;
+                }
+                
+            }
+
+            private void MapEventStarted(MapEvent mapEvent, PartyBase attackerParty, PartyBase defenderParty)
+            {
+                int cAIndex = 0;
+                switch (this.actionsInOrder[currentActionIndex].action)
+                {
+                    //case "give":
+                    //    aT.OnPartyConsumedFoodQuest(party, i, this, (QuestBase)this);
+                    //    break;
+
+                    //case "exchange":
+                    //    this.actionsInOrder[currentActionIndex].OnPartyConsumedFoodQuest(party, currentActionIndex, this, (QuestBase)this);
+                    //    break;
+                    case "damage":
+                        cAIndex = currentActionIndex;
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "take")
+                            {
+                                this.actionsInOrder[cAIndex + 1].MapEventStarted(mapEvent, attackerParty, defenderParty, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
+                    case "kill":
+                        cAIndex = currentActionIndex;
+                        if (cAIndex < actionsInOrder.Count-1)
+                        {
+                            if (this.actionsInOrder[cAIndex + 1].action == "take")
+                            {
+                                this.actionsInOrder[cAIndex + 1].MapEventStarted(mapEvent, attackerParty, defenderParty, cAIndex + 1, this, (QuestBase)this);
+                            }
+                        }
+                        break;
+                    case "take":
+                        this.actionsInOrder[currentActionIndex].MapEventStarted(mapEvent, attackerParty, defenderParty, currentActionIndex, this, (QuestBase)this);
+                        break;
+                }
+
+            }
+
         }
     }
 }

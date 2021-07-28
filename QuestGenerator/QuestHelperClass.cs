@@ -25,6 +25,28 @@ namespace QuestGenerator
             {"capture",15.0f }, {"damage",15.0f }, {"exchange",5.0f }, {"explore",10.0f }, {"free",15.0f }, {"gather",7.0f }, {"give",5.0f }
         , {"goto",5.0f }, {"kill",15.0f }, {"listen",5.0f }, {"report",7.0f }, {"take",20.0f }, {"quest",20.0f }, {"use",20.0f }};
 
+        public static Dictionary<string, string> motivationDesc = new Dictionary<string, string>() {
+            {"Knowledge", "I have a thirst for knowledge!" },
+            {"Comfort", "I need you to make life a bit more comfortable for me." },
+            {"Reputation", "I want to invest in a champion to boost my reputation around here." },
+            {"Serenity", "Life has been a bit chaotic lately and I feel like it needs to calm down a bit." },
+            {"Protection", "The region has been dangerous lately. I need you to do something about that." },
+            {"Conquest", "It's about time we expand our influence around here. Let us conquer the world." },
+            {"Wealth", "I desiree riches." },
+            {"Ability", "You need to keep your abilities top notch." },
+            {"Equipment", "I need to replenish my item stock." }};
+
+        public static Dictionary<string, string> subquest_Prepare = new Dictionary<string, string>() {
+            {"Knowledge", "You should learn a thing or two before continuing your task. I'll help you out with it, because... " },
+            {"Comfort", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
+            {"Reputation", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
+            {"Serenity", "I know you're busy with your mission, but I really need your help with a few dangerous subjects. " },
+            {"Protection", "I know you're busy with your mission, but I really need your help with a few dangerous subjects. " },
+            {"Conquest", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
+            {"Wealth", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
+            {"Ability", "{HERO} has given you a task right? Hmm... But you don't look ready for it yet. I've got just the task to help you prepare for it though. " },
+            {"Equipment", "{HERO} borrowed a few items from me before, but he hasn't given them back, so you're going to get some new ones for me. " }};
+
         public static Dictionary<string, string> descriptionChoser = new Dictionary<string, string>() {
             //Knowledge
             {"Deliver item for study","I need you to deliver a certain item to me, think you could do that?" },
@@ -34,7 +56,7 @@ namespace QuestGenerator
             {"Kill pests","A certain group of individuals have been wreaking havoc lately. I need you to get rid of them." },
             //Reputation
             {"Obtain rare items","This item has been lacking and is now rare. Find it and bring it to me." },
-            {"Kill enemies","A few of my enemies have been more active recently. I need you to teach them a lesson." },
+            {"Kill enemies","A few of my enemies have been more active recently. I need you to teach them a lesson." }, //I want to sponsor a champion, go do something
             {"Visit dangerous place","There's a place I need you to scout. Report back to me if you find anything worth considering." },
             //Serenity
             {"Revenge, Justice","These people have wronged me. I need you to take care of them so that justice can be served." },
@@ -224,7 +246,16 @@ namespace QuestGenerator
         {
             return descriptionChoser[strategy];
         }
-        
+
+        public static string MotivationCalculator(string strategy)
+        {
+            return motivationDesc[strategy];
+        }
+
+        public static string SubquestPrepare(string strategy)
+        {
+            return subquest_Prepare[strategy];
+        }
         public static string ListenDialog(string strategy, int pair)
         {
             if (pair ==1)

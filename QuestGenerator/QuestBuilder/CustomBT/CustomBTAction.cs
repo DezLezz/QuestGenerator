@@ -108,6 +108,35 @@ namespace QuestGenerator.QuestBuilder.CustomBT
             return CustomBTState.success;
         }
 
+        public override CustomBTState bringTargetsBack( IssueBase issueBase, QuestGenTestIssue questGen, bool alternative)
+        {
+            
+            if (this.ActionTarget != null)
+            {
+                if (alternative)
+                {
+                    this.ActionTarget.bringTargetsBack();
+                    questGen.alternativeActionsInOrder.Add(this.ActionTarget);
+                }
+                else
+                {
+                    this.ActionTarget.bringTargetsBack();
+                    questGen.actionsInOrder.Add(this.ActionTarget);
+                }
+
+            }
+
+            return CustomBTState.success;
+        }
+
+        public override CustomBTState bringTargetsBack( QuestBase questBase, QuestGenTestQuest questGen)
+        {
+            this.ActionTarget.bringTargetsBack();
+            questGen.actionsInOrder.Add(this.ActionTarget);
+
+            return CustomBTState.success;
+        }
+
         public override void updateHeroTargets(string targetString, Hero targetHero)
         {
              this.ActionTarget.updateHeroTargets(targetString, targetHero);

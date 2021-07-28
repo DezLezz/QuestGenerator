@@ -9,6 +9,7 @@ using TaleWorlds.Localization;
 using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -53,16 +54,7 @@ namespace QuestGenerator
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("goto action - line 60"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -91,25 +83,49 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            
-            if (this.settlementTarget != null)
+            if (!actioncomplete)
             {
-                questBase.AddTrackedObject(this.settlementTarget);
-                TextObject textObject = new TextObject("Go to {SETTLEMENT}", null);
-                textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    if (this.settlementTarget != null)
+                    {
+                        questBase.AddTrackedObject(this.settlementTarget);
+                        TextObject textObject = new TextObject("Go to {SETTLEMENT}", null);
+                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (this.settlementTarget != null)
+                        {
+                            questBase.AddTrackedObject(this.settlementTarget);
+                            TextObject textObject = new TextObject("Go to {SETTLEMENT}", null);
+                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                    }
+                }
             }
+            
+            
         }
 
         public override void OnSettlementEnteredQuest(MobileParty party, Settlement settlement, Hero hero, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
             if (settlement.Name == this.settlementTarget.Name)
             {
-                if (!questGen.journalLogs[this.index].HasBeenCompleted())
+                if (!actioncomplete)
                 {
                     questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-
+                    questGen.RemoveTrackedObject(this.settlementTarget);
                     questGen.currentActionIndex++;
+                    actioncomplete = true;
+                    questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -156,5 +172,44 @@ namespace QuestGenerator
             }
             return strat;
         }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Visit dangerous place":
+                    strat = new TextObject("Visit {SETTLEMENT}.", null);
+                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    break;
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Visit dangerous place":
+                    strat = new TextObject("{SETTLEMENT} is a {TYPE} located not far from here. It belongs to one of our allies and I've heard rumors that something dangerous has been seen nearby.", null);
+                    if (this.settlementTarget.IsTown)
+                    {
+                        strat.SetTextVariable("TYPE", "town");
+                    }
+                    else if (this.settlementTarget.IsCastle)
+                    {
+                        strat.SetTextVariable("TYPE", "castle");
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("TYPE", "village");
+                    }
+                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    break;
+            }
+            return strat.ToString();
+        }
+
     }
 }

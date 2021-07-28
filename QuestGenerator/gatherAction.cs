@@ -9,6 +9,7 @@ using TaleWorlds.Localization;
 using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -99,16 +100,7 @@ namespace QuestGenerator
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("gather action - line 106"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -132,6 +124,12 @@ namespace QuestGenerator
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
+                            while (newItem.Value > 300)
+                            {
+                                r = rnd.Next(itemList.Count());
+
+                                newItem = itemList.ElementAt(r);
+                            }
 
                             amount = 300 / newItem.Value;
                             if (amount <= 0)
@@ -146,7 +144,7 @@ namespace QuestGenerator
                             {
                                 
                                 bool flag = false;
-                                foreach (ItemRosterElement iR in x.ItemRoster)
+                                foreach (ItemRosterElement iR in x.Stash)
                                 {
                                     if (iR.EquipmentElement.Item.Name == newItem.Name)
                                     {
@@ -174,6 +172,12 @@ namespace QuestGenerator
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
+                            while (newItem.Value > 300)
+                            {
+                                r = rnd.Next(itemList.Count());
+
+                                newItem = itemList.ElementAt(r);
+                            }
 
                             amount = 300 / newItem.Value;
                             if (amount <= 0)
@@ -216,6 +220,12 @@ namespace QuestGenerator
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
+                            while (newItem.Value > 300)
+                            {
+                                r = rnd.Next(itemList.Count());
+
+                                newItem = itemList.ElementAt(r);
+                            }
 
                             amount = 300 / newItem.Value;
                             if (amount <= 0)
@@ -258,6 +268,12 @@ namespace QuestGenerator
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
+                            while (newItem.Value > 300)
+                            {
+                                r = rnd.Next(itemList.Count());
+
+                                newItem = itemList.ElementAt(r);
+                            }
 
                             amount = 300 / newItem.Value;
                             if (amount <= 0)
@@ -296,10 +312,15 @@ namespace QuestGenerator
                 {
 
                     var itemList = Items.All;
-
                     int r = rnd.Next(itemList.Count());
 
                     newItem = itemList.ElementAt(r);
+                    while (newItem.Value > 300)
+                    {
+                        r = rnd.Next(itemList.Count());
+
+                        newItem = itemList.ElementAt(r);
+                    }
 
                     amount = 300 / newItem.Value;
                     if (amount <= 0)
@@ -348,30 +369,66 @@ namespace QuestGenerator
             }
             else if (this.GetItemAmount() == 0  && this.itemTarget != null)
             {
-                int amount = 0;
-                amount = rnd.Next(1, 11);
+                int amount = 300 / this.itemTarget.Value;
+                if (amount <= 0)
+                {
+                    amount = 1;
+                }
                 this.SetItemAmount(amount);
             }
         }
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-
-            if (this.settlementTarget != null)
+            if (!actioncomplete)
             {
-                TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You can maybe find some in {SETTLEMENT}.", null);
-                textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    if (this.settlementTarget != null)
+                    {
+                        TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You can maybe find some in {SETTLEMENT}.", null);
+                        textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                        textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                    }
+                    else
+                    {
+                        TextObject textObject = new TextObject();
+                        if (this.itemTarget.IsCraftedByPlayer || this.itemTarget.IsCraftedWeapon) textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
+                        else textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}.", null);
+                        textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                        textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (this.settlementTarget != null)
+                        {
+                            TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You can maybe find some in {SETTLEMENT}.", null);
+                            textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                            textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                        }
+                        else
+                        {
+                            TextObject textObject = new TextObject();
+                            if (this.itemTarget.IsCraftedByPlayer || this.itemTarget.IsCraftedWeapon) textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
+                            else textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}.", null);
+                            textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
+                            textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                        }
+                    }
+                }
             }
-            else
-            {
-                TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
-                textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
-            }
+            
         }
 
         public override void OnPlayerInventoryExchangeQuest(List<(ItemRosterElement, int)> purchasedItems, List<(ItemRosterElement, int)> soldItems, bool isTrading, int index, QuestGenTestQuest questGen, QuestBase questBase)
@@ -397,10 +454,11 @@ namespace QuestGenerator
                 questGen.UpdateQuestTaskS(questGen.journalLogs[index], questGen.journalLogs[index].CurrentProgress + amountPurchased);
             }
 
-            if (amountRemaining <= 0)
+            if (amountRemaining <= 0 && !actioncomplete)
             {
                 questGen.currentActionIndex++;
-
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -451,10 +509,11 @@ namespace QuestGenerator
                     questGen.UpdateQuestTaskS(questGen.journalLogs[index], questGen.journalLogs[index].CurrentProgress + amountPurchased);
                 }
 
-                if (amountRemaining <= 0)
+                if (amountRemaining <= 0 && !actioncomplete)
                 {
                     questGen.currentActionIndex++;
-
+                    actioncomplete = true;
+                    questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -500,10 +559,11 @@ namespace QuestGenerator
                     questGen.UpdateQuestTaskS(questGen.journalLogs[index], questGen.journalLogs[index].CurrentProgress + amountPurchased);
                 }
 
-                if (amountRemaining <= 0)
+                if (amountRemaining <= 0 && !actioncomplete)
                 {
                     questGen.currentActionIndex++;
-
+                    actioncomplete = true;
+                    questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -538,24 +598,88 @@ namespace QuestGenerator
                 
             }
 
-            if (amountRemaining <= 0)
+            if (amountRemaining <= 0 && !actioncomplete)
             {
-                if (!questGen.journalLogs[this.index].HasBeenCompleted())
+                questGen.currentActionIndex++;
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
-                    questGen.currentActionIndex++;
-
-                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
-                    {
-                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
-                    }
-                    else
-                    {
-                        questGen.SuccessConsequences();
-                    }
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
+                else
+                {
+                    questGen.SuccessConsequences();
+                }
+                
             }
         }
 
+        public override void OnItemProducedEventQuest(ItemObject itemObject, Settlement settlement, int count, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+            bool flag = false;
+            int amountRemaining = this.GetItemAmount();
+            int amountPurchased = 0;
+
+            if (itemObject == this.GetItemTarget())
+            {
+                flag = true;
+                amountPurchased++;
+            }
+
+            if (flag)
+            {
+                amountRemaining -= amountPurchased;
+                this.SetItemAmount(amountRemaining);
+
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], questGen.journalLogs[this.index].CurrentProgress + amountPurchased);
+
+            }
+
+            if (amountRemaining <= 0 && !actioncomplete)
+            {
+                questGen.currentActionIndex++;
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                if (questGen.currentActionIndex<questGen.actionsInOrder.Count)
+                {
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                }
+                else
+                {
+                    questGen.SuccessConsequences();
+                }
+                
+            }
+        }
+
+        public override void ItemsLooted(ItemRoster items, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+            foreach (ItemRosterElement item in items)
+            {
+                if (item.EquipmentElement.Item == this.itemTarget)
+                {
+                    this.itemAmount -= item.Amount;
+                    questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], questGen.journalLogs[this.index].CurrentProgress + item.Amount);
+                }
+            }
+
+            if (this.itemAmount <= 0 && !actioncomplete)
+            {
+                questGen.currentActionIndex++;
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                {
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                }
+                else
+                {
+                    questGen.SuccessConsequences();
+                }
+
+            }
+        }
         public override void updateHeroTargets(string targetString, Hero targetHero)
         {
         }
@@ -589,5 +713,35 @@ namespace QuestGenerator
             }
             return strat;
         }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Gather raw materials":
+                    strat = new TextObject("Gather {ITEM}.", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    break;
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Gather raw materials":
+                    strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
+                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    break;
+            }
+            return strat.ToString();
+        }
+
     }
 }

@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using static TaleWorlds.CampaignSystem.QuestBase;
 using QuestGenerator.QuestBuilder;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -23,6 +24,8 @@ namespace QuestGenerator
         public Settlement settlementTarget;
 
         public string settlementTargetString;
+
+        public bool questCreated = false;
 
         public subquestAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
         {
@@ -71,31 +74,13 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("subquest action - line 78"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("subquest action - line 93"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -247,12 +232,10 @@ namespace QuestGenerator
                 this.settlementTargetString = this.settlementTarget.Name.ToString();
             }
 
-            if (this.heroTarget.CanHaveQuestsOrIssues())
-            {
-                PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
-                Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, this.heroTarget);
-            }
-            
+
+            this.children[0].origin_quest_hero = this.heroTarget.Name.ToString();
+            PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+            Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, this.heroTarget);
 
         }
 
@@ -263,28 +246,91 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (this.settlementTarget != null)
+            //if (this.heroTarget.CanHaveQuestsOrIssues() && !questCreated)
+            //{
+                
+            //    questCreated = true;
+            //}
+            if (this.heroTarget.Issue == null && !actioncomplete)
             {
-                TextObject textObject = new TextObject("Talk to {HERO} in {SETTLEMENT} and perform its task.", null);
-                textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                if (this.index == 0)
+                {
+                    questGen.currentActionIndex++;
+                    this.actioncomplete = true;
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                    {
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                    }
+                    else
+                    {
+                        questGen.SuccessConsequences();
+                    }
+                }
+                else if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                {
+                    questGen.currentActionIndex++;
+                    this.actioncomplete = true;
+                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                    {
+                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                    }
+                    else
+                    {
+                        questGen.SuccessConsequences();
+                    }
+                }
             }
-            else
+            else if (!actioncomplete)
             {
-                InformationManager.DisplayMessage(new InformationMessage("subquest action - line 274"));
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    if (this.settlementTarget != null)
+                    {
+                        TextObject textObject = new TextObject("Talk with {HERO} in {SETTLEMENT}.", null);
+                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                    else
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage("subquest action - line 274"));
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (this.settlementTarget != null)
+                        {
+                            TextObject textObject = new TextObject("Talk with {HERO} in {SETTLEMENT}.", null);
+                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                            questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                        else
+                        {
+                            InformationManager.DisplayMessage(new InformationMessage("subquest action - line 274"));
+                        }
+                    }
+                }
             }
+            
+            
         }
 
         public override void OnQuestCompletedEventQuest(QuestBase quest, QuestCompleteDetails questCompleteDetails, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
             if (quest.QuestGiver == this.heroTarget)
             {
-                if (!questGen.journalLogs[this.index].HasBeenCompleted())
+                if (!this.actioncomplete)
                 {
                     questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
                     questGen.currentActionIndex++;
+                    this.actioncomplete = true;
+                    questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];

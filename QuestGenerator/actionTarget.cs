@@ -28,6 +28,10 @@ namespace QuestGenerator
 
         public string questGiverString;
 
+        public bool actioncomplete = false;
+
+        public bool actionInLog = false;
+
         public QuestGenerator.QuestBuilder.Action Action { get; set; }
 
         public actionTarget(string action, QuestGenerator.QuestBuilder.Action action1)
@@ -163,9 +167,29 @@ namespace QuestGenerator
 
         }
 
+        public virtual void ItemsLooted(ItemRoster items, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
+        public virtual void MapEventStarted(MapEvent mapEvent, PartyBase attackerParty, PartyBase defenderParty, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        {
+
+        }
+
         public virtual TextObject getDescription(string strategy)
         {
             return new TextObject();
+        }
+
+        public virtual TextObject getTitle(string strategy)
+        {
+            return new TextObject();
+        }
+
+        public virtual string getListenString(string strategy)
+        {
+            return "";
         }
     }
 }

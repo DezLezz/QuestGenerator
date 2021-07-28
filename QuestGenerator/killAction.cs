@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using static QuestGenerator.QuestGenTestCampaignBehavior;
 using QuestGenerator.QuestBuilder;
 using Helpers;
+using QuestGenerator.QuestBuilder.CustomBT;
 
 namespace QuestGenerator
 {
@@ -46,32 +47,14 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("kill action - line 53"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
             if (this.questGiver == null)
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("kill action - line 69"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -255,18 +238,46 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
-            if (heroFlag)
+            if (!actioncomplete)
             {
-                questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
-                TextObject textObject = new TextObject("Kill {HERO}.", null);
-                textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                if (this.index == 0)
+                {
+                    this.actionInLog = true;
+                    if (heroFlag)
+                    {
+                        questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                        TextObject textObject = new TextObject("Kill {HERO}.", null);
+                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                    else
+                    {
+                        TextObject textObject = new TextObject("Defeat a party of " + this.nonHeroTarget + ".", null);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    }
+                }
+                else
+                {
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (heroFlag)
+                        {
+                            questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
+                            TextObject textObject = new TextObject("Kill {HERO}.", null);
+                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                        else
+                        {
+                            TextObject textObject = new TextObject("Defeat a party of " + this.nonHeroTarget + ".", null);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        }
+                    }
+                }
             }
-            else
-            {
-                TextObject textObject = new TextObject("Defeat a party of " + this.nonHeroTarget + ".", null);
-                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-            }
+            
+            
         }
 
         public override void HeroKilledEvent(Hero victim, Hero killer, KillCharacterAction.KillCharacterActionDetail detail, bool showNotification, int index, QuestGenTestQuest questGen, QuestBase questBase)
@@ -295,22 +306,25 @@ namespace QuestGenerator
 
         private void killConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!actioncomplete)
             {
                 questGen.currentActionIndex++;
 
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                if (this.heroFlag)
+                {
+                    MakePeaceAction.Apply(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                    //FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                }
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
                 else
                 {
-                    if (this.heroFlag)
-                    {
-                        FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
-                    }
+                    
                     questGen.SuccessConsequences();
                 }
             }
@@ -412,5 +426,161 @@ namespace QuestGenerator
             }
             return strat;
         }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Kill pests":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Kill enemies":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Kill {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Revenge, Justice":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Take revenge on  {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Take revenge on a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Attack threatening entities":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Attack {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Attack a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+                case "Attack enemy":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Attack {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Attack a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", this.nonHeroTarget);
+                        break;
+                    }
+
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Kill pests":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+                case "Kill enemies":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+                case "Revenge, Justice":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+                case "Attack threatening entities":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+                case "Attack enemy":
+                    if (this.heroFlag)
+                    {
+                        strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                        strat.SetTextVariable("HERO", this.heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately I can't pinpoint the exact location of a group of {HERO}, however, there're bound to be somewhere nearby, so keep your eyes open.", null);
+                        strat.SetTextVariable("HERO", this.Action.param[0].target);
+                    }
+
+                    break;
+
+            }
+            return strat.ToString();
+        }
+
     }
 }

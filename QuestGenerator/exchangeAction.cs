@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using QuestGenerator.QuestBuilder;
+using QuestGenerator.QuestBuilder.CustomBT;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,16 +56,7 @@ namespace QuestGenerator
             {
                 var setName = this.Action.param[0].target;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 62"));
-                }
-                if (array.Length == 1)
-                {
-                    this.heroTarget = array[0];
-                }
+                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
             if (this.itemTargetReceive == null)
@@ -103,16 +95,7 @@ namespace QuestGenerator
             {
                 var setName = this.questGiverString;
 
-                Hero[] array = (from x in Hero.AllAliveHeroes where (x.Name.ToString() == setName) select x).ToArray<Hero>();
-
-                if (array.Length > 1 || array.Length == 0)
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 110"));
-                }
-                if (array.Length == 1)
-                {
-                    this.questGiver = array[0];
-                }
+                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -216,7 +199,7 @@ namespace QuestGenerator
 
                 while (this.itemTargetReceive == null && amount > 0)
                 {
-                    foreach (ItemRosterElement itemRosterElement in toGiveHero.CurrentSettlement.ItemRoster)
+                    foreach (ItemRosterElement itemRosterElement in toGiveHero.CurrentSettlement.Stash)
                     {
                         if (itemRosterElement.Amount >= amount)
                         {
@@ -228,9 +211,17 @@ namespace QuestGenerator
                             {
                                 questGen.chosenMission.updateItemTargets(itemNumb, itemRosterElement.EquipmentElement.Item);
                             }
-                            
-                            int r = rnd.Next(1, amount);
-                            this.itemAmountReceive = r;
+
+                            int amount2 = 300 / itemRosterElement.EquipmentElement.Item.Value;
+                            if (amount2 <= 0)
+                            {
+                                amount2 = 1;
+                            }
+                            if (amount2 >= amount)
+                            {
+                                amount2 = amount;
+                            }
+                            this.itemAmountReceive = amount2;
                             break;
                         }
                     }
@@ -254,6 +245,13 @@ namespace QuestGenerator
                 int r = rnd.Next(itemList.Count());
 
                 newItem = itemList.ElementAt(r);
+                while (newItem.Value > 300)
+                {
+                    r = rnd.Next(itemList.Count());
+
+                    newItem = itemList.ElementAt(r);
+                }
+                
                 int r2 = 1;
                 if (this.itemTargetReceive != null)
                 {
@@ -277,17 +275,25 @@ namespace QuestGenerator
 
             }
 
-            else if ((this.itemTargetGive != null && this.itemAmountGive == 0) || (this.itemTargetReceive != null && this.itemAmountReceive == 0))
+            else if ((this.itemTargetGive != null && this.itemAmountGive == 0) && (this.itemTargetReceive != null && this.itemAmountReceive == 0))
             {
                 if (this.itemAmountGive == 0)
                 {
-                    int r = rnd.Next(1, 10);
-                    this.itemAmountGive =r;
+                    int amount = 300 / itemTargetGive.Value;
+                    if (amount <= 0)
+                    {
+                        amount = 1;
+                    }
+                    this.itemAmountGive = amount;
                 }
                 if (this.itemAmountReceive == 0)
                 {
-                    int r = rnd.Next(1, 10);
-                    this.itemAmountGive = r;
+                    int amount = 300 / itemTargetReceive.Value;
+                    if (amount <= 0)
+                    {
+                        amount = 1;
+                    }
+                    this.itemAmountReceive = amount;
                 }
                 
             }
@@ -295,35 +301,49 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (this.heroTarget != null)
+            if (!actioncomplete)
             {
-                questBase.AddTrackedObject(this.heroTarget);
-                Campaign.Current.ConversationManager.AddDialogFlow(this.GetExchangeActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
-
-                TextObject textObject = new TextObject("Get {ITEM_AMOUNT} {ITEM_NAME} to exchange with {HERO}", null);
-                textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmountGive);
-                textObject.SetTextVariable("ITEM_NAME", this.itemTargetGive.Name);
-                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                if (currentItemProgress < this.itemAmountGive)
+                if (this.index == 0)
                 {
-                    TextObject textObject1 = new TextObject("You have enough items to complete the quest.", null);
-                    textObject1.SetTextVariable("QUEST_SETTLEMENT", this.questGiver.CurrentSettlement.Name);
-                    InformationManager.AddQuickInformation(textObject1, 0, null, "");
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, currentItemProgress, this.itemAmountGive, null, false);
+                    this.actionInLog = true;
+                    if (this.heroTarget != null)
+                    {
+                        questBase.AddTrackedObject(this.heroTarget);
+                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetExchangeActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
+
+                        TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+                        textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+                        textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+                        textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+                        textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+                        textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+
+                    }
                 }
                 else
                 {
-                    TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                    textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                    textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                    textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                }
+                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    {
+                        this.actionInLog = true;
+                        if (this.heroTarget != null)
+                        {
+                            questBase.AddTrackedObject(this.heroTarget);
+                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetExchangeActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
 
+                            TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+                            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+                            textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+                            textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+                            textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+                            textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+
+                        }
+                    }
+                }
             }
+            
 
         }
 
@@ -352,14 +372,15 @@ namespace QuestGenerator
 
         private void exchangeConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!questGen.journalLogs[this.index].HasBeenCompleted())
+            if (!actioncomplete)
             {
                 questGen.currentActionIndex++;
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
                 GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTargetGive, this.itemAmountGive);
                 GiveItemAction.ApplyForParties(Settlement.CurrentSettlement.Party, PartyBase.MainParty, this.itemTargetReceive, this.itemAmountReceive);
-
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -371,210 +392,210 @@ namespace QuestGenerator
             }
         }
 
-        public override void OnPlayerInventoryExchangeQuest(List<(ItemRosterElement, int)> purchasedItems, List<(ItemRosterElement, int)> soldItems, bool isTrading, int index, QuestGenTestQuest questGen, QuestBase questBase)
-        {
-            bool flag = false;
+        //public override void OnPlayerInventoryExchangeQuest(List<(ItemRosterElement, int)> purchasedItems, List<(ItemRosterElement, int)> soldItems, bool isTrading, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        //{
+        //    bool flag = false;
 
-            foreach (ValueTuple<ItemRosterElement, int> valueTuple in purchasedItems)
-            {
-                ItemRosterElement item = valueTuple.Item1;
-                if (item.EquipmentElement.Item == this.itemTargetGive)
-                {
-                    flag = true;
-                    break;
-                }
-            }
-            if (!flag)
-            {
-                foreach (ValueTuple<ItemRosterElement, int> valueTuple2 in soldItems)
-                {
-                    ItemRosterElement item = valueTuple2.Item1;
-                    if (item.EquipmentElement.Item == this.itemTargetGive)
-                    {
-                        flag = true;
-                        break;
-                    }
-                }
-            }
-            if (flag)
-            {
-                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
-                if (currentItemProgress >= this.itemAmountGive)
-                {
-                    TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                    textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                    textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                    textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                }
-            }
-        }
+        //    foreach (ValueTuple<ItemRosterElement, int> valueTuple in purchasedItems)
+        //    {
+        //        ItemRosterElement item = valueTuple.Item1;
+        //        if (item.EquipmentElement.Item == this.itemTargetGive)
+        //        {
+        //            flag = true;
+        //            break;
+        //        }
+        //    }
+        //    if (!flag)
+        //    {
+        //        foreach (ValueTuple<ItemRosterElement, int> valueTuple2 in soldItems)
+        //        {
+        //            ItemRosterElement item = valueTuple2.Item1;
+        //            if (item.EquipmentElement.Item == this.itemTargetGive)
+        //            {
+        //                flag = true;
+        //                break;
+        //            }
+        //        }
+        //    }
+        //    if (flag)
+        //    {
+        //        int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+        //        questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+        //        if (currentItemProgress >= this.itemAmountGive)
+        //        {
+        //            TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+        //            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+        //            textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+        //            textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+        //            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+        //        }
+        //    }
+        //}
 
-        public override void OnPartyConsumedFoodQuest(MobileParty party, int index, QuestGenTestQuest questGen, QuestBase questBase)
-        {
-            if (this.GetHeroTarget() != null)
-            {
-                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
-                if (currentItemProgress >= this.itemAmountGive)
-                {
-                    TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                    textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                    textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                    textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                }
-            }
-        }
+        //public override void OnPartyConsumedFoodQuest(MobileParty party, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        //{
+        //    if (this.GetHeroTarget() != null)
+        //    {
+        //        int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+        //        questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+        //        if (currentItemProgress >= this.itemAmountGive)
+        //        {
+        //            TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+        //            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+        //            textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+        //            textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+        //            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+        //        }
+        //    }
+        //}
 
-        public override void OnHeroSharedFoodWithAnotherHeroQuest(Hero supporterHero, Hero supportedHero, float influence, int index, QuestGenTestQuest questGen, QuestBase questBase)
-        {
-            if (this.GetHeroTarget() != null)
-            {
-                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
-                if (currentItemProgress >= this.itemAmountGive)
-                {
-                    TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                    textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                    textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                    textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                }
-            }
-        }
+        //public override void OnHeroSharedFoodWithAnotherHeroQuest(Hero supporterHero, Hero supportedHero, float influence, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        //{
+        //    if (this.GetHeroTarget() != null)
+        //    {
+        //        int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+        //        questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+        //        if (currentItemProgress >= this.itemAmountGive)
+        //        {
+        //            TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+        //            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+        //            textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+        //            textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+        //            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+        //        }
+        //    }
+        //}
 
-        public override void OnEquipmentSmeltedByHeroEventQuest(Hero hero, EquipmentElement equipmentElement, int index, QuestGenTestQuest questGen, QuestBase questBase)
-        {
-            if (RefinePatch.itemRefined)
-            {
-                bool flag = false;
-                int amountRemaining = this.itemAmountGive;
-                int amountPurchased = 0;
+        //public override void OnEquipmentSmeltedByHeroEventQuest(Hero hero, EquipmentElement equipmentElement, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        //{
+        //    if (RefinePatch.itemRefined)
+        //    {
+        //        bool flag = false;
+        //        int amountRemaining = this.itemAmountGive;
+        //        int amountPurchased = 0;
 
-                var refined = RefinePatch.refineFormulaS;
+        //        var refined = RefinePatch.refineFormulaS;
 
 
-                if (refined.OutputCount > 0)
-                {
-                    ItemObject craftingMaterialItem3 = Campaign.Current.Models.SmithingModel.GetCraftingMaterialItem(refined.Output);
-                    if (craftingMaterialItem3.Name == equipmentElement.Item.Name)
-                    {
-                        flag = true;
-                        amountPurchased += refined.OutputCount;
-                    }
+        //        if (refined.OutputCount > 0)
+        //        {
+        //            ItemObject craftingMaterialItem3 = Campaign.Current.Models.SmithingModel.GetCraftingMaterialItem(refined.Output);
+        //            if (craftingMaterialItem3.Name == equipmentElement.Item.Name)
+        //            {
+        //                flag = true;
+        //                amountPurchased += refined.OutputCount;
+        //            }
 
-                }
-                if (refined.Output2Count > 0)
-                {
-                    ItemObject craftingMaterialItem4 = Campaign.Current.Models.SmithingModel.GetCraftingMaterialItem(refined.Output2);
-                    if (craftingMaterialItem4.Name == equipmentElement.Item.Name)
-                    {
-                        flag = true;
-                        amountPurchased += refined.Output2Count;
-                    }
+        //        }
+        //        if (refined.Output2Count > 0)
+        //        {
+        //            ItemObject craftingMaterialItem4 = Campaign.Current.Models.SmithingModel.GetCraftingMaterialItem(refined.Output2);
+        //            if (craftingMaterialItem4.Name == equipmentElement.Item.Name)
+        //            {
+        //                flag = true;
+        //                amountPurchased += refined.Output2Count;
+        //            }
 
-                }
+        //        }
 
-                if (flag)
-                {
-                    int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                    questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
-                    if (currentItemProgress >= this.itemAmountGive)
-                    {
-                        TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                        textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                        textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                        textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                        textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                        textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                    }
-                }
+        //        if (flag)
+        //        {
+        //            int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+        //            questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+        //            if (currentItemProgress >= this.itemAmountGive)
+        //            {
+        //                TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+        //                textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+        //                textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+        //                textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+        //                textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+        //                textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+        //                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+        //            }
+        //        }
 
-                RefinePatch.itemRefined = false;
-            }
-            else
-            {
-                bool flag = false;
-                int amountRemaining = itemAmountGive;
-                int amountPurchased = 0;
-                int[] smeltingOutputForItem = Campaign.Current.Models.SmithingModel.GetSmeltingOutputForItem(equipmentElement.Item);
+        //        RefinePatch.itemRefined = false;
+        //    }
+        //    else
+        //    {
+        //        bool flag = false;
+        //        int amountRemaining = itemAmountGive;
+        //        int amountPurchased = 0;
+        //        int[] smeltingOutputForItem = Campaign.Current.Models.SmithingModel.GetSmeltingOutputForItem(equipmentElement.Item);
 
-                Campaign campaign = Campaign.Current;
-                GameModels models = campaign.Models;
-                ItemObject resourceItem;
+        //        Campaign campaign = Campaign.Current;
+        //        GameModels models = campaign.Models;
+        //        ItemObject resourceItem;
 
-                for (int i = 0; i < smeltingOutputForItem.Length; i++)
-                {
-                    var material = (CraftingMaterials)i;
+        //        for (int i = 0; i < smeltingOutputForItem.Length; i++)
+        //        {
+        //            var material = (CraftingMaterials)i;
 
-                    SmithingModel smithingModel = models.SmithingModel;
-                    resourceItem = ((smithingModel != null) ? smithingModel.GetCraftingMaterialItem(material) : null);
+        //            SmithingModel smithingModel = models.SmithingModel;
+        //            resourceItem = ((smithingModel != null) ? smithingModel.GetCraftingMaterialItem(material) : null);
 
-                    if (resourceItem.Name == this.itemTargetGive.Name)
-                    {
-                        flag = true;
-                        amountPurchased += smeltingOutputForItem[i];
-                        break;
-                    }
-                }
+        //            if (resourceItem.Name == this.itemTargetGive.Name)
+        //            {
+        //                flag = true;
+        //                amountPurchased += smeltingOutputForItem[i];
+        //                break;
+        //            }
+        //        }
 
-                if (flag)
-                {
-                    int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                    questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
-                    if (currentItemProgress >= this.itemAmountGive)
-                    {
-                        TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                        textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                        textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                        textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                        textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                        textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                    }
-                }
-            }
+        //        if (flag)
+        //        {
+        //            int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+        //            questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+        //            if (currentItemProgress >= this.itemAmountGive)
+        //            {
+        //                TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+        //                textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+        //                textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+        //                textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+        //                textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+        //                textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+        //                questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+        //            }
+        //        }
+        //    }
 
-        }
+        //}
 
-        public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, bool flag2, int index, QuestGenTestQuest questGen, QuestBase questBase)
-        {
-            bool flag = false;
-            int amountRemaining = this.itemAmountGive;
-            int amountPurchased = 0;
+        //public override void OnNewItemCraftedEventQuest(ItemObject item, Crafting.OverrideData crafted, bool flag2, int index, QuestGenTestQuest questGen, QuestBase questBase)
+        //{
+        //    bool flag = false;
+        //    int amountRemaining = this.itemAmountGive;
+        //    int amountPurchased = 0;
 
-            if (item == this.itemTargetGive)
-            {
-                flag = true;
-                amountPurchased++;
-            }
+        //    if (item == this.itemTargetGive)
+        //    {
+        //        flag = true;
+        //        amountPurchased++;
+        //    }
 
-            if (flag)
-            {
-                int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
-                questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
-                if (currentItemProgress >= this.itemAmountGive)
-                {
-                    TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
-                    textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
-                    textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
-                    textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
-                    textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
-                    questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-                }
-            }
+        //    if (flag)
+        //    {
+        //        int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+        //        questGen.UpdateQuestTaskS(questGen.journalLogs[index], currentItemProgress);
+        //        if (currentItemProgress >= this.itemAmountGive)
+        //        {
+        //            TextObject textObject2 = new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null);
+        //            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT1", this.itemAmountGive);
+        //            textObject2.SetTextVariable("ITEM_NAME1", this.itemTargetGive.Name);
+        //            textObject2.SetTextVariable("ITEM_AMOUNT2", this.itemAmountReceive);
+        //            textObject2.SetTextVariable("ITEM_NAME2", this.itemTargetReceive.Name);
+        //            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+        //        }
+        //    }
 
-        }
+        //}
 
         public override void updateHeroTargets(string targetString, Hero targetHero)
         {
@@ -629,6 +650,49 @@ namespace QuestGenerator
                     
             }
             return strat;
+        }
+
+        public override TextObject getTitle(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Gather raw materials":
+                    strat = new TextObject("Gather {ITEM}.", null);
+                    strat.SetTextVariable("ITEM", this.itemTargetGive.Name);
+                    break;
+                case "Trade for supplies":
+                    strat = new TextObject("Trade {ITEM} for {ITEM2}.", null);
+                    strat.SetTextVariable("ITEM", this.itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", this.itemTargetGive.Name);
+                    break;
+
+            }
+            return strat;
+        }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Gather raw materials":
+                    strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
+                    strat.SetTextVariable("ITEM", this.itemTargetGive.Name);
+                    strat.SetTextVariable("TYPE", this.itemTargetGive.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", this.itemTargetGive.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", this.itemTargetGive.Culture.ToString());
+                    break;
+                case "Trade for supplies":
+                    strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
+                    strat.SetTextVariable("ITEM", this.itemTargetGive.Name);
+                    strat.SetTextVariable("TYPE", this.itemTargetGive.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", this.itemTargetGive.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", this.itemTargetGive.Culture.ToString());
+                    break;
+
+            }
+            return strat.ToString();
         }
 
     }

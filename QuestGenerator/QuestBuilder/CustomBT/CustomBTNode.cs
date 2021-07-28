@@ -23,6 +23,12 @@ namespace QuestGenerator.QuestBuilder.CustomBT
 
         public string info { get; set; }
 
+        public string subquest_info { get; set; }
+
+        public string origin_quest_motiv { get; set; }
+
+        public string origin_quest_hero { get; set; }
+
         public CustomBTType nodeType { get; set; }
 
         [XmlIgnore]
@@ -42,11 +48,15 @@ namespace QuestGenerator.QuestBuilder.CustomBT
             this.Children = new List<CustomBTNode>();
             this.nodeType = type;
             this.parent = nodeParent;
+            this.subquest_info = "none";
         }
 
         public abstract CustomBTState run(CustomBTStep step, QuestBase questBase, QuestGenTestQuest questGen);
 
         public abstract CustomBTState run(CustomBTStep step, IssueBase questBase, QuestGenTestIssue questGen, bool alternative);
+
+        public abstract CustomBTState bringTargetsBack( QuestBase questBase, QuestGenTestQuest questGen);
+        public abstract CustomBTState bringTargetsBack(IssueBase questBase, QuestGenTestIssue questGen, bool alternative);
 
         public abstract void updateHeroTargets(string targetString, Hero targetHero);
         public abstract void updateSettlementTargets(string targetString, Settlement targetSettlement);

@@ -103,10 +103,10 @@ namespace QuestGenerator.QuestBuilder
             rescue_NT = new Action("<rescue>", "NonTerminal", 36, "None", new List<Parameter>() { rescue_NT_p });
 
             subquestRule = new Rules("<subquest>", "NonTerminal", 1, new List<List<Action>>() { new List<Action>() { none }, new List<Action>() { quest, go_to_NT } }, new List<float>() { 0.3f, 0.7f });
-            gotoRule = new Rules("<goto>", "NonTerminal", 2, new List<List<Action>>() { new List<Action>() { none }, new List<Action>() { go_to }, new List<Action>() { explore }, new List<Action>() { learn_NT, go_to_NT }, new List<Action>() { prepare_NT, go_to_NT } }, new List<float>() { 0.2f,0.34f, 0.01f, 0.2f, 0.25f });
+            gotoRule = new Rules("<goto>", "NonTerminal", 2, new List<List<Action>>() { new List<Action>() { none }, new List<Action>() { go_to }, new List<Action>() { explore }, new List<Action>() { learn_NT, go_to_NT }, new List<Action>() { prepare_NT, go_to_NT } }, new List<float>() { 0.3f,0.49f, 0.01f, 0.1f, 0.1f });
             learnRule = new Rules("<learn>", "NonTerminal", 3, new List<List<Action>>() { new List<Action>() { none }, new List<Action>() { go_to_NT, subquest, listen } }, new List<float>() { 0.3f, 0.7f});
             prepareRule = new Rules("<prepare>", "NonTerminal", 4, new List<List<Action>>() { new List<Action>() { go_to_NT, subquest } }, new List<float>() { 1.0f });
-            getRule = new Rules("<get>", "NonTerminal", 5, new List<List<Action>>() { new List<Action>() { none }, new List<Action>() { steal_NT }, new List<Action>() { go_to_NT, gather }, new List<Action>() { get_NT, go_to_NT, exchange }, new List<Action>() { get_NT, subquest } }, new List<float>() { 0.1f, 0.35f, 0.35f, 0.1f, 0.1f });
+            getRule = new Rules("<get>", "NonTerminal", 5, new List<List<Action>>() { new List<Action>() { none }, new List<Action>() { steal_NT }, new List<Action>() { go_to_NT, gather }, new List<Action>() { get_NT, go_to_NT, exchange }, new List<Action>() { get_NT, subquest } }, new List<float>() { 0.15f, 0.35f, 0.35f, 0.1f, 0.05f });
             stealRule = new Rules("<steal>", "NonTerminal", 6, new List<List<Action>>() { new List<Action>() { go_to_NT, defeat_NT, take } }, new List<float>() { 1.0f });
             captureRule = new Rules("<capture>", "NonTerminal", 7, new List<List<Action>>() { new List<Action>() { go_to_NT, damage, capture }, new List<Action>() { go_to_NT, capture } }, new List<float>() {0.45f, 0.55f});
             defeatRule = new Rules("<defeat>", "NonTerminal", 8, new List<List<Action>>() { new List<Action>() { go_to_NT, damage }, new List<Action>() { go_to_NT, kill } }, new List<float>() { 0.3f, 0.7f});
@@ -316,18 +316,11 @@ namespace QuestGenerator.QuestBuilder
 
             string path = @"..\..\Modules\QuestGenerator\MissionList.xml";
 
-            if (new FileInfo(path).Length == 0)
-            {
-                List<CustomBTNode> tempList = new List<CustomBTNode>();
-                tempList.Add(testGiver.customBTTree);
-                XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path,tempList);
-            }
-            else
-            {
-                var tempList = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path);
-                tempList.Add(testGiver.customBTTree);
-                XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path, tempList);
-            }
+            
+            List<CustomBTNode> tempList = new List<CustomBTNode>();
+            tempList.Add(testGiver.customBTTree);
+            XmlSerialization.WriteToXmlFile<List<CustomBTNode>>(path,tempList);
+            
 
             subquestRule.weights = new List<float>() { 0.3f, 0.7f };
             gotoRule.weights = new List<float>() { 0.2f, 0.34f, 0.01f, 0.2f, 0.25f };
@@ -351,7 +344,15 @@ namespace QuestGenerator.QuestBuilder
             {
                 QuestGiver testGiver = new QuestGiver("npc1", new List<Motivation>() { knowledge, comfort, reputation, serenity, protection, conquest, wealth, ability, equipment }, chars, items, enemies, locations);
                 Quest testQuest = testGiver.CreateQuest(1, new List<Strategy>() { itemForStudy, interviewNPC, obtainLux, killPests, obtainRareItems, killEnemies, visitDangerousPlace, revengeJustice, captureCriminal, checkOnNPC1, recoverLostStolenItem, rescueNPC, attackThreateningEntities, captureCriminal2, createDiversion2, recruit, attackEnemy, stealStuff, recruit2, gatherRawMaterials, stealValuablesforResale, practiceCombat, praticeSkill, deliverSupplies, stealSupplies, tradeforSupplies }, new List<Rules>() { subquestRule, gotoRule, learnRule, prepareRule, getRule, stealRule, captureRule, defeatRule, reportRule, giveRule, rescueRule });
-                tempList.Add(testGiver.customBTTree);
+                if (testQuest.steps.Count > 0)
+                {
+                    tempList.Add(testGiver.customBTTree);
+                }
+                else
+                {
+                    i--;
+                }
+                
                 subquestRule.weights = new List<float>() { 0.3f, 0.7f };
                 gotoRule.weights = new List<float>() { 0.2f, 0.34f, 0.01f, 0.2f, 0.25f };
                 learnRule.weights = new List<float>() { 0.3f, 0.7f };
