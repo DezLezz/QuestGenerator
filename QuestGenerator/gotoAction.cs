@@ -1,41 +1,38 @@
 ﻿using Helpers;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
-using QuestGenerator.QuestBuilder;
-using QuestGenerator.QuestBuilder.CustomBT;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class gotoAction : actionTarget
     {
         [XmlIgnore]
         public Settlement settlementTarget;
-        
-        public gotoAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+
+        public gotoAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public gotoAction() { }
-        
+
         public override Settlement GetSettlementTarget()
         {
-            return this.settlementTarget;
+            return settlementTarget;
         }
 
         public override void SetSettlementTarget(Settlement newS)
         {
-            this.settlementTarget = newS;
+            settlementTarget = newS;
         }
 
         public override void bringTargetsBack()
         {
-            if (this.settlementTarget == null)
+            if (settlementTarget == null)
             {
                 var setName = this.Action.param[0].target;
 
@@ -47,14 +44,14 @@ namespace QuestGenerator
                 }
                 if (array.Length == 1)
                 {
-                    this.settlementTarget = array[0];
+                    settlementTarget = array[0];
                 }
             }
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -66,9 +63,9 @@ namespace QuestGenerator
                 string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
-                    return x != this.questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == this.questGiver.MapFaction;
+                    return x != questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == questGiver.MapFaction;
                 });
-                
+
                 if (alternative)
                 {
                     questGen.alternativeMission.updateSettlementTargets(placeNumb, settlement);
@@ -83,46 +80,50 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!actioncomplete)
+            if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    this.actionInLog = true;
-                    if (this.settlementTarget != null)
+                    actionInLog = true;
+                    if (settlementTarget != null)
                     {
-                        questBase.AddTrackedObject(this.settlementTarget);
-                        TextObject textObject = new TextObject("Go to {SETTLEMENT}", null);
-                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                        questBase.AddTrackedObject(settlementTarget);
+                        TextObject textObject = new TextObject("Visit the settlement of {SETTLEMENT}", null);
+                        textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
                         questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                     }
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        this.actionInLog = true;
-                        if (this.settlementTarget != null)
+                        actionInLog = true;
+                        if (settlementTarget != null)
                         {
-                            questBase.AddTrackedObject(this.settlementTarget);
-                            TextObject textObject = new TextObject("Go to {SETTLEMENT}", null);
-                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                            questBase.AddTrackedObject(settlementTarget);
+                            TextObject textObject = new TextObject("Visit the settlement of {SETTLEMENT}", null);
+                            textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
                             questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                         }
                     }
                 }
             }
-            
-            
+
+
         }
 
         public override void OnSettlementEnteredQuest(MobileParty party, Settlement settlement, Hero hero, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
-            if (settlement.Name == this.settlementTarget.Name)
+            if (settlement.Name == settlementTarget.Name)
             {
                 if (!actioncomplete)
                 {
                     questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-                    questGen.RemoveTrackedObject(this.settlementTarget);
+                    questGen.RemoveTrackedObject(settlementTarget);
                     questGen.currentActionIndex++;
                     actioncomplete = true;
                     questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
@@ -150,7 +151,7 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetSettlement.Name.ToString();
-                    this.settlementTarget = targetSettlement;
+                    settlementTarget = targetSettlement;
                     break;
                 }
             }
@@ -160,14 +161,14 @@ namespace QuestGenerator
         {
         }
 
-        public override TextObject getDescription(string strategy)
+        public override TextObject getDescription(string strategy, int pair)
         {
             TextObject strat = new TextObject("empty", null);
             switch (strategy)
             {
                 case "Visit dangerous place":
                     strat = new TextObject("I need you to scout {SETTLEMENT}. Report back to me if you find anything worth considering.", null);
-                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
                     break;
             }
             return strat;
@@ -179,8 +180,8 @@ namespace QuestGenerator
             switch (strategy)
             {
                 case "Visit dangerous place":
-                    strat = new TextObject("Visit {SETTLEMENT}.", null);
-                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    strat = new TextObject("Visit the area around {SETTLEMENT}.", null);
+                    strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
                     break;
             }
             return strat;
@@ -193,11 +194,11 @@ namespace QuestGenerator
             {
                 case "Visit dangerous place":
                     strat = new TextObject("{SETTLEMENT} is a {TYPE} located not far from here. It belongs to one of our allies and I've heard rumors that something dangerous has been seen nearby.", null);
-                    if (this.settlementTarget.IsTown)
+                    if (settlementTarget.IsTown)
                     {
                         strat.SetTextVariable("TYPE", "town");
                     }
-                    else if (this.settlementTarget.IsCastle)
+                    else if (settlementTarget.IsCastle)
                     {
                         strat.SetTextVariable("TYPE", "castle");
                     }
@@ -205,7 +206,7 @@ namespace QuestGenerator
                     {
                         strat.SetTextVariable("TYPE", "village");
                     }
-                    strat.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
+                    strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
                     break;
             }
             return strat.ToString();

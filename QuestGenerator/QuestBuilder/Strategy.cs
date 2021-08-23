@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace QuestGenerator.QuestBuilder
+namespace ThePlotLords.QuestBuilder
 {
     public class Strategy
     {
@@ -19,7 +15,7 @@ namespace QuestGenerator.QuestBuilder
 
         public Strategy(string motivation, string name, int index, List<Action> actions)
         {
-            Motivation = motivation;
+            this.Motivation = motivation;
             this.name = name;
             this.index = index;
             this.actions = actions;

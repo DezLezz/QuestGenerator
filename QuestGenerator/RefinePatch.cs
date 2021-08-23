@@ -3,7 +3,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.SandBox.CampaignBehaviors;
 using TaleWorlds.Core;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     [HarmonyPatch(typeof(CraftingCampaignBehavior), "DoRefinement")]
     static class RefinePatch

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuestGenerator", "QuestGenerator\QuestGenerator.csproj", "{CEB68871-BD0E-4AD9-8FF8-5BAEBF62CC21}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThePlotLords", "QuestGenerator\ThePlotLords.csproj", "{CEB68871-BD0E-4AD9-8FF8-5BAEBF62CC21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

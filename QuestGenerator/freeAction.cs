@@ -1,18 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
-using QuestGenerator.QuestBuilder;
-using Helpers;
-using QuestGenerator.QuestBuilder.CustomBT;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class freeAction : actionTarget
     {
@@ -21,34 +20,34 @@ namespace QuestGenerator
         [XmlIgnore]
         public Hero heroTarget;
 
-        public freeAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+        public freeAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public freeAction() { }
 
         public override Hero GetHeroTarget()
         {
-            return this.heroTarget;
+            return heroTarget;
         }
 
         public override void SetHeroTarget(Hero newH)
         {
-            this.heroTarget = newH;
+            heroTarget = newH;
         }
         public override void bringTargetsBack()
         {
-            if (this.heroTarget == null)
+            if (heroTarget == null)
             {
                 var setName = this.Action.param[0].target;
 
-                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -60,7 +59,7 @@ namespace QuestGenerator
                 Hero newHero;
                 List<Hero> nonEnemies = new List<Hero>();
 
-                int i = this.index;
+                int i = index;
 
                 foreach (Hero h in Hero.AllAliveHeroes)
                 {
@@ -90,7 +89,7 @@ namespace QuestGenerator
                                 {
                                     defeatPlace = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
                                 }
-                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(this.questGiver.MapFaction));
+                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
                                 foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                 {
@@ -105,7 +104,7 @@ namespace QuestGenerator
                                     }
                                 }
 
-                                if (this.heroTarget == null)
+                                if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
                                     TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
@@ -116,7 +115,7 @@ namespace QuestGenerator
                             }
                             else
                             {
-                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(this.questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(this.questGiver.MapFaction));
+                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
                                 foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                 {
@@ -131,7 +130,7 @@ namespace QuestGenerator
                                     }
                                 }
 
-                                if (this.heroTarget == null)
+                                if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
                                     TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
@@ -155,7 +154,7 @@ namespace QuestGenerator
                                 {
                                     defeatPlace = questGen.actionsInOrder[i - 1].GetSettlementTarget();
                                 }
-                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(this.questGiver.MapFaction));
+                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
                                 foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                 {
@@ -170,10 +169,10 @@ namespace QuestGenerator
                                     }
                                 }
 
-                                if (this.heroTarget == null)
+                                if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
-                                    TakePrisonerAction.Apply(targetSet.Party,nonEnemies[r]);
+                                    TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
                                     newHero = nonEnemies[r];
                                     questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
                                 }
@@ -181,7 +180,7 @@ namespace QuestGenerator
                             }
                             else
                             {
-                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(this.questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(this.questGiver.MapFaction));
+                                Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
                                 foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                 {
@@ -196,10 +195,10 @@ namespace QuestGenerator
                                     }
                                 }
 
-                                if (this.heroTarget == null)
+                                if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
-                                    TakePrisonerAction.Apply(targetSet.Party,nonEnemies[r]);
+                                    TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
                                     newHero = nonEnemies[r];
                                     questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
                                 }
@@ -209,7 +208,7 @@ namespace QuestGenerator
                     }
                     else if (i == 0)
                     {
-                        Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(this.questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(this.questGiver.MapFaction));
+                        Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
                         foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                         {
@@ -231,7 +230,7 @@ namespace QuestGenerator
                             }
                         }
 
-                        if (this.heroTarget == null)
+                        if (heroTarget == null)
                         {
                             int r = rnd.Next(nonEnemies.Count());
                             TakePrisonerAction.Apply(targetSet.Party, nonEnemies[r]);
@@ -250,49 +249,51 @@ namespace QuestGenerator
                 }
 
             }
-            else if (this.heroTarget != null)
+            else if (heroTarget != null)
             {
-                if (!this.heroTarget.IsPrisoner)
+                if (!heroTarget.IsPrisoner)
                 {
-                    Settlement targetSet = SettlementHelper.FindNearestSettlement((Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(this.heroTarget.MapFaction));
-                    TakePrisonerAction.Apply(targetSet.Party, this.heroTarget);
+                    Settlement targetSet = SettlementHelper.FindNearestSettlement((Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(heroTarget.MapFaction));
+                    TakePrisonerAction.Apply(targetSet.Party, heroTarget);
                 }
             }
         }
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
-            if (!actioncomplete)
+            if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    this.actionInLog = true;
-                    questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
-                    TextObject textObject = new TextObject("Find a way to free {HERO} from {SETTLEMENT}.", null);
-                    textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                    textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    actionInLog = true;
+                    questBase.AddTrackedObject(heroTarget.PartyBelongedTo);
+                    TextObject textObject = new TextObject("Find a way to liberate {HERO} from {SETTLEMENT}.", null);
+                    textObject.SetTextVariable("HERO", heroTarget.Name);
+                    textObject.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
                     questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                    InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        this.actionInLog = true;
-                        questBase.AddTrackedObject(this.heroTarget.PartyBelongedTo);
-                        TextObject textObject = new TextObject("Find a way to free {HERO} from {SETTLEMENT}.", null);
-                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                        textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                        actionInLog = true;
+                        questBase.AddTrackedObject(heroTarget.PartyBelongedTo);
+                        TextObject textObject = new TextObject("Find a way to liberate {HERO} from {SETTLEMENT}.", null);
+                        textObject.SetTextVariable("HERO", heroTarget.Name);
+                        textObject.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
                         questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                     }
                 }
             }
-            
+
         }
 
         public override void HeroPrisonerReleased(Hero prisoner, PartyBase party, IFaction capturerFaction, EndCaptivityDetail detail, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
 
-            if (prisoner == this.heroTarget)
+            if (prisoner == heroTarget)
             {
                 this.freeConsequences(index, questBase, questGen);
             }
@@ -300,7 +301,7 @@ namespace QuestGenerator
 
         public override void PrisonersChangeInSettlement(Settlement settlement, FlattenedTroopRoster prisonerRoster, Hero prisonerHero, bool isReleased, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
-            if (prisonerHero == null || prisonerHero == this.heroTarget)
+            if (prisonerHero == null || prisonerHero == heroTarget)
             {
                 this.freeConsequences(index, questBase, questGen);
             }
@@ -315,14 +316,14 @@ namespace QuestGenerator
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
                 actioncomplete = true;
                 questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
-                MakePeaceAction.Apply(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
+                MakePeaceAction.Apply(Hero.MainHero.MapFaction, questGiver.MapFaction);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
                 else
                 {
-                    
+
                     //FactionManager.DeclareAlliance(Hero.MainHero.MapFaction, this.questGiver.MapFaction);
                     questGen.SuccessConsequences();
                 }
@@ -336,7 +337,7 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetHero.Name.ToString();
-                    this.heroTarget = targetHero;
+                    heroTarget = targetHero;
                     break;
                 }
             }
@@ -350,14 +351,14 @@ namespace QuestGenerator
         {
         }
 
-        public override TextObject getDescription(string strategy)
+        public override TextObject getDescription(string strategy, int pair)
         {
             TextObject strat = new TextObject("empty", null);
             switch (strategy)
             {
                 case "Rescue NPC":
                     strat = new TextObject("One of my companions, {HERO}, has been arrested. I need you to set him free.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
                     break;
             }
             return strat;
@@ -370,7 +371,7 @@ namespace QuestGenerator
             {
                 case "Rescue NPC":
                     strat = new TextObject("Rescue {HERO}.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
                     break;
             }
             return strat;
@@ -383,8 +384,8 @@ namespace QuestGenerator
             {
                 case "Rescue NPC":
                     strat = new TextObject("If you're looking for {HERO}, you can probably find him imprisioned in {SETTLEMENT}.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
-                    strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
+                    strat.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
                     break;
             }
             return strat.ToString();

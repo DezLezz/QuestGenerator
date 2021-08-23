@@ -1,17 +1,15 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
-using QuestGenerator.QuestBuilder;
-using QuestGenerator.QuestBuilder.CustomBT;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class giveAction : actionTarget
     {
@@ -26,49 +24,49 @@ namespace QuestGenerator
         public int itemAmount = 0;
 
         public bool partTwo = false;
-        public giveAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+        public giveAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public giveAction() { }
 
         public override int GetItemAmount()
         {
-            return this.itemAmount;
+            return itemAmount;
         }
 
         public override void SetItemAmount(int newIA)
         {
-            this.itemAmount = newIA;
+            itemAmount = newIA;
         }
 
         public override Hero GetHeroTarget()
         {
-            return this.heroTarget;
+            return heroTarget;
         }
 
         public override void SetHeroTarget(Hero newH)
         {
-            this.heroTarget = newH;
+            heroTarget = newH;
         }
 
         public override ItemObject GetItemTarget()
         {
-            return this.itemTarget;
+            return itemTarget;
         }
 
         public override void SetItemTarget(ItemObject newI)
         {
-            this.itemTarget = newI;
+            itemTarget = newI;
         }
 
         public override void bringTargetsBack()
         {
 
-            if (this.heroTarget == null)
+            if (heroTarget == null)
             {
                 var setName = this.Action.param[0].target;
 
-                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
             if (this.GetItemTarget() == null)
@@ -83,16 +81,16 @@ namespace QuestGenerator
                 }
                 if (array.Length == 1)
                 {
-                    this.itemTarget = array[0];
+                    itemTarget = array[0];
                 }
 
             }
 
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
         public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
@@ -102,7 +100,7 @@ namespace QuestGenerator
                 string npcNumb = this.Action.param[0].target;
                 string targetHero = "none";
                 Hero newHero = new Hero();
-                int i = this.index;
+                int i = index;
                 if (i > 0)
                 {
                     if (alternative)
@@ -116,9 +114,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                            foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != this.questGiver)
+                                if (hero != questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -137,9 +135,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                            foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != this.questGiver)
+                                if (hero != questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -148,7 +146,7 @@ namespace QuestGenerator
                         }
                     }
 
-                    
+
                 }
 
                 else if (i == 0)
@@ -184,7 +182,7 @@ namespace QuestGenerator
 
             if (this.Action.param[1].target.Contains("item"))
             {
-                Hero toGiveHero = this.heroTarget;
+                Hero toGiveHero = heroTarget;
                 int amount = 0;
                 string itemNumb = this.Action.param[1].target;
                 ItemObject newItem;
@@ -200,7 +198,7 @@ namespace QuestGenerator
                     newItem = itemList.ElementAt(r);
                 }
 
-                amount = 300/newItem.Value;
+                amount = 300 / newItem.Value;
                 if (amount <= 0)
                 {
                     amount = 1;
@@ -235,77 +233,69 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!actioncomplete)
+            if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    this.actionInLog = true;
-                    if (this.heroTarget != null)
+                    actionInLog = true;
+                    if (heroTarget != null)
                     {
-                        questBase.AddTrackedObject(this.heroTarget);
-                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
+                        actionInLog = true;
+                        if (heroTarget != null)
+                        {
+                            questBase.AddTrackedObject(heroTarget);
+                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
 
-                        TextObject textObject = new TextObject("Get {ITEM_AMOUNT} {ITEM_NAME} to give to {HERO}", null);
-                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                        textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                        textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                        int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
-                        if (currentItemProgress < this.itemAmount)
-                        {
-                            TextObject textObject1 = new TextObject("You have enough items to complete the quest.", null);
-                            textObject1.SetTextVariable("QUEST_SETTLEMENT", this.questGiver.CurrentSettlement.Name);
-                            InformationManager.AddQuickInformation(textObject1, 0, null, "");
-                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, currentItemProgress, this.itemAmount, null, false);
-                        }
-                        else
-                        {
-                            partTwo = true;
+                            int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(itemTarget);
+
                             TextObject textObject2 = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
-                            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                            textObject2.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                            textObject2.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                            questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+                            textObject2.SetTextVariable("HERO", heroTarget.Name);
+                            textObject2.SetTextVariable("ITEM_AMOUNT", itemAmount);
+                            textObject2.SetTextVariable("ITEM_NAME", itemTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject2));
+
                         }
 
                     }
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        this.actionInLog = true;
-                        if (this.heroTarget != null)
+                        actionInLog = true;
+                        if (heroTarget != null)
                         {
-                            questBase.AddTrackedObject(this.heroTarget);
-                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
+                            questBase.AddTrackedObject(heroTarget);
+                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetGiveActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
 
-                            int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget);
+                            int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(itemTarget);
 
                             TextObject textObject2 = new TextObject("Give {ITEM_AMOUNT} {ITEM_NAME} to {HERO}", null);
-                            textObject2.SetTextVariable("HERO", this.heroTarget.Name);
-                            textObject2.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                            textObject2.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                            questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
-
+                            textObject2.SetTextVariable("HERO", heroTarget.Name);
+                            textObject2.SetTextVariable("ITEM_AMOUNT", itemAmount);
+                            textObject2.SetTextVariable("ITEM_NAME", itemTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject2, textObject2, 0, 1, null, false);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject2));
 
                         }
                     }
                 }
             }
-            
-            
+
+
         }
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            return GetGiveActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen);
+            return this.GetGiveActionDialogFlow(heroTarget, index, this.questGiver, questBase, questGen);
         }
 
         private DialogFlow GetGiveActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
             TextObject npcLine1 = new TextObject("Have you brought {ITEM_AMOUNT} of {ITEM_NAME}?", null);
-            npcLine1.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-            npcLine1.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
+            npcLine1.SetTextVariable("ITEM_AMOUNT", itemAmount);
+            npcLine1.SetTextVariable("ITEM_NAME", itemTarget.Name);
             TextObject textObject = new TextObject("Thank you, {?PLAYER.GENDER}milady{?}sir{\\?}! You are a saint.", null);
             TextObject textObject2 = new TextObject("We await your success, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
             textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
@@ -325,7 +315,7 @@ namespace QuestGenerator
 
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
-                GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, this.itemTarget, this.itemAmount);
+                GiveItemAction.ApplyForParties(PartyBase.MainParty, Settlement.CurrentSettlement.Party, itemTarget, itemAmount);
                 actioncomplete = true;
                 questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
                 if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
@@ -425,7 +415,7 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetHero.Name.ToString();
-                    this.heroTarget = targetHero;
+                    heroTarget = targetHero;
                     break;
                 }
             }
@@ -442,36 +432,36 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetItem.Name.ToString();
-                    this.itemTarget = targetItem;
+                    itemTarget = targetItem;
                     break;
                 }
             }
         }
 
-        public override TextObject getDescription(string strategy)
+        public override TextObject getDescription(string strategy, int pair)
         {
-            TextObject strat = new TextObject("empty",null);
+            TextObject strat = new TextObject("empty", null);
             switch (strategy)
             {
                 case "Deliver item for study":
                     strat = new TextObject("I need you to deliver {ITEM} to me, think you could do that?", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Obtain luxuries":
                     strat = new TextObject("There are some things I've been craving. Do you think you could bring {ITEM} to me?", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Obtain rare items":
                     strat = new TextObject("{ITEM} has been lacking and is now rare. Find it and bring it to me.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Recover lost/stolen item":
                     strat = new TextObject("I've lost {ITEM}, think you could get it back for me?", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Deliver supplies":
-                    strat = new TextObject("We are in need some supplies in our settlement. Can you get {ITEM} for us?", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat = new TextObject("We are in need of some supplies in our settlement. Can you get {ITEM} for us?", null);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
             }
             return strat;
@@ -484,23 +474,23 @@ namespace QuestGenerator
             {
                 case "Deliver item for study":
                     strat = new TextObject("Deliver {ITEM} for study.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Obtain luxuries":
                     strat = new TextObject("Obtain {ITEM}.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Obtain rare items":
                     strat = new TextObject("Obtain {ITEM}.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Recover lost/stolen item":
                     strat = new TextObject("Recover {ITEM}.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
                 case "Deliver supplies":
                     strat = new TextObject("Deliver {ITEM}.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
             }
             return strat;
@@ -513,38 +503,38 @@ namespace QuestGenerator
             {
                 case "Deliver item for study":
                     strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
-                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
-                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
-                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
+                    strat.SetTextVariable("TYPE", itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", itemTarget.Culture.ToString());
                     break;
                 case "Obtain luxuries":
                     strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
-                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
-                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
-                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
+                    strat.SetTextVariable("TYPE", itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", itemTarget.Culture.ToString());
                     break;
                 case "Obtain rare items":
                     strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
-                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
-                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
-                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
+                    strat.SetTextVariable("TYPE", itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", itemTarget.Culture.ToString());
                     break;
                 case "Recover lost/stolen item":
                     strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
-                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
-                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
-                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
+                    strat.SetTextVariable("TYPE", itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", itemTarget.Culture.ToString());
                     break;
                 case "Deliver supplies":
                     strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
-                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
-                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
-                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
+                    strat.SetTextVariable("TYPE", itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("CULTURE", itemTarget.Culture.ToString());
                     break;
             }
             return strat.ToString();

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator.QuestBuilder.CustomBT
+namespace ThePlotLords.QuestBuilder.CustomBT
 {
     public class CustomBTMotivation : CustomBTNode
     {
@@ -80,7 +76,7 @@ namespace QuestGenerator.QuestBuilder.CustomBT
             {
                 foreach (CustomBTNode node in this.Children)
                 {
-                    if (node.bringTargetsBack( questBase, questGen) == CustomBTState.fail)
+                    if (node.bringTargetsBack(questBase, questGen) == CustomBTState.fail)
                     {
                         return CustomBTState.fail;
                     }

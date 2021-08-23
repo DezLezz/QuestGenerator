@@ -9,8 +9,8 @@
     <ProjectGuid>{CEB68871-BD0E-4AD9-8FF8-5BAEBF62CC21}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>QuestGenerator</RootNamespace>
-    <AssemblyName>QuestGenerator</AssemblyName>
+    <RootNamespace>ThePlotLords</RootNamespace>
+    <AssemblyName>ThePlotLords</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -19,7 +19,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>E:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\QuestGenerator\bin\Win64_Shipping_Client</OutputPath>
+    <OutputPath>E:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\ThePlotLords\bin\Win64_Shipping_Client\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -103,6 +103,8 @@
     <Compile Include="actionTarget.cs" />
     <Compile Include="BinarySerialization.cs" />
     <Compile Include="captureAction.cs" />
+    <Compile Include="JsonSerialization.cs" />
+    <Compile Include="PlayerData.cs" />
     <Compile Include="damageAction.cs" />
     <Compile Include="freeAction.cs" />
     <Compile Include="killAction.cs" />
@@ -152,7 +154,7 @@
   <ItemGroup />
   <!-- Post-Build -->
   <PropertyGroup>
-    <PostBuildEvent>xcopy /d /y "$(MSBuildProjectDirectory)\SubModule.xml" "E:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\QuestGenerator"</PostBuildEvent>
+    <PostBuildEvent>xcopy /d /y "$(MSBuildProjectDirectory)\SubModule.xml" "E:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\ThePlotLords"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

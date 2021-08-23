@@ -1,17 +1,16 @@
 ﻿using Helpers;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
-using QuestGenerator.QuestBuilder;
-using QuestGenerator.QuestBuilder.CustomBT;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class gatherAction : actionTarget
     {
@@ -27,39 +26,39 @@ namespace QuestGenerator
 
         public string settlementStringTarget;
 
-        public gatherAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+        public gatherAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public gatherAction() { }
 
         public override int GetItemAmount()
         {
-            return this.itemAmount;
+            return itemAmount;
         }
 
         public override void SetItemAmount(int newIA)
         {
-            this.itemAmount = newIA;
+            itemAmount = newIA;
         }
 
         public override ItemObject GetItemTarget()
         {
-            return this.itemTarget;
+            return itemTarget;
         }
 
         public override void SetItemTarget(ItemObject newI)
         {
-            this.itemTarget = newI;
+            itemTarget = newI;
         }
 
         public override Settlement GetSettlementTarget()
         {
-            return this.settlementTarget;
+            return settlementTarget;
         }
 
         public override void SetSettlementTarget(Settlement newS)
         {
-            this.settlementTarget = newS;
+            settlementTarget = newS;
         }
 
         public override void bringTargetsBack()
@@ -76,14 +75,14 @@ namespace QuestGenerator
                 }
                 if (array.Length == 1)
                 {
-                    this.itemTarget = array[0];
+                    itemTarget = array[0];
                 }
 
             }
 
-            if (this.settlementStringTarget != null && this.settlementTarget == null)
+            if (settlementStringTarget != null && settlementTarget == null)
             {
-                var setName = this.settlementStringTarget;
+                var setName = settlementStringTarget;
 
                 Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == setName) select x).ToArray<Settlement>();
 
@@ -93,14 +92,14 @@ namespace QuestGenerator
                 }
                 if (array.Length == 1)
                 {
-                    this.settlementTarget = array[0];
+                    settlementTarget = array[0];
                 }
             }
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -111,7 +110,7 @@ namespace QuestGenerator
                 var itemNumb = this.Action.param[0].target;
                 int amount = 0;
                 ItemObject newItem = new ItemObject();
-                int i = this.index;
+                int i = index;
                 if (i > 0)
                 {
                     if (alternative)
@@ -142,9 +141,9 @@ namespace QuestGenerator
 
                             Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                
+
                                 bool flag = false;
-                                foreach (ItemRosterElement iR in x.Stash)
+                                foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
                                     if (iR.EquipmentElement.Item.Name == newItem.Name)
                                     {
@@ -158,7 +157,7 @@ namespace QuestGenerator
 
                             if (settlement != null)
                             {
-                                this.settlementStringTarget = settlement.Name.ToString();
+                                settlementStringTarget = settlement.Name.ToString();
                             }
 
                             this.SetSettlementTarget(settlement);
@@ -188,7 +187,7 @@ namespace QuestGenerator
 
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                
+
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
@@ -204,7 +203,7 @@ namespace QuestGenerator
 
                             if (settlement != null)
                             {
-                                this.settlementStringTarget = settlement.Name.ToString();
+                                settlementStringTarget = settlement.Name.ToString();
                             }
 
                             this.SetSettlementTarget(settlement);
@@ -238,7 +237,7 @@ namespace QuestGenerator
 
                             Settlement settlement1 = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                
+
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
@@ -254,7 +253,7 @@ namespace QuestGenerator
 
                             if (settlement != null)
                             {
-                                this.settlementStringTarget = settlement.Name.ToString();
+                                settlementStringTarget = settlement.Name.ToString();
                             }
 
                             this.SetSettlementTarget(settlement);
@@ -284,7 +283,7 @@ namespace QuestGenerator
 
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                
+
                                 bool flag = false;
                                 foreach (ItemRosterElement iR in x.ItemRoster)
                                 {
@@ -300,7 +299,7 @@ namespace QuestGenerator
 
                             if (settlement != null)
                             {
-                                this.settlementStringTarget = settlement.Name.ToString();
+                                settlementStringTarget = settlement.Name.ToString();
                             }
 
                             this.SetSettlementTarget(settlement);
@@ -331,7 +330,7 @@ namespace QuestGenerator
 
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
-                        
+
                         bool flag = false;
                         foreach (ItemRosterElement iR in x.ItemRoster)
                         {
@@ -347,7 +346,7 @@ namespace QuestGenerator
 
                     if (settlement != null)
                     {
-                        this.settlementStringTarget = settlement.Name.ToString();
+                        settlementStringTarget = settlement.Name.ToString();
                     }
 
                     this.SetSettlementTarget(settlement);
@@ -367,9 +366,9 @@ namespace QuestGenerator
                 }
 
             }
-            else if (this.GetItemAmount() == 0  && this.itemTarget != null)
+            else if (this.GetItemAmount() == 0 && itemTarget != null)
             {
-                int amount = 300 / this.itemTarget.Value;
+                int amount = 300 / itemTarget.Value;
                 if (amount <= 0)
                 {
                     amount = 1;
@@ -380,55 +379,59 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!actioncomplete)
+            if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    this.actionInLog = true;
-                    if (this.settlementTarget != null)
+                    actionInLog = true;
+                    if (settlementTarget != null)
                     {
                         TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You can maybe find some in {SETTLEMENT}.", null);
-                        textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                        textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                        textObject.SetTextVariable("ITEM_AMOUNT", itemAmount);
+                        textObject.SetTextVariable("ITEM_NAME", itemTarget.Name);
+                        textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, itemAmount, null, false);
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                     }
                     else
                     {
                         TextObject textObject = new TextObject();
-                        if (this.itemTarget.IsCraftedByPlayer || this.itemTarget.IsCraftedWeapon) textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
+                        if (itemTarget.IsCraftedByPlayer || itemTarget.IsCraftedWeapon) textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
                         else textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}.", null);
-                        textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                        textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                        textObject.SetTextVariable("ITEM_AMOUNT", itemAmount);
+                        textObject.SetTextVariable("ITEM_NAME", itemTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, itemAmount, null, false);
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                     }
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        this.actionInLog = true;
-                        if (this.settlementTarget != null)
+                        actionInLog = true;
+                        if (settlementTarget != null)
                         {
                             TextObject textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You can maybe find some in {SETTLEMENT}.", null);
-                            textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                            textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                            textObject.SetTextVariable("ITEM_AMOUNT", itemAmount);
+                            textObject.SetTextVariable("ITEM_NAME", itemTarget.Name);
+                            textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, itemAmount, null, false);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                         }
                         else
                         {
                             TextObject textObject = new TextObject();
-                            if (this.itemTarget.IsCraftedByPlayer || this.itemTarget.IsCraftedWeapon) textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
+                            if (itemTarget.IsCraftedByPlayer || itemTarget.IsCraftedWeapon) textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}. You might need to craft them.", null);
                             else textObject = new TextObject("Gather {ITEM_AMOUNT} {ITEM_NAME}.", null);
-                            textObject.SetTextVariable("ITEM_AMOUNT", this.itemAmount);
-                            textObject.SetTextVariable("ITEM_NAME", this.itemTarget.Name);
-                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, this.itemAmount, null, false);
+                            textObject.SetTextVariable("ITEM_AMOUNT", itemAmount);
+                            textObject.SetTextVariable("ITEM_NAME", itemTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, itemAmount, null, false);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                         }
                     }
                 }
             }
-            
+
         }
 
         public override void OnPlayerInventoryExchangeQuest(List<(ItemRosterElement, int)> purchasedItems, List<(ItemRosterElement, int)> soldItems, bool isTrading, int index, QuestGenTestQuest questGen, QuestBase questBase)
@@ -593,9 +596,9 @@ namespace QuestGenerator
             {
                 amountRemaining -= amountPurchased;
                 this.SetItemAmount(amountRemaining);
-                
+
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], questGen.journalLogs[this.index].CurrentProgress + amountPurchased);
-                
+
             }
 
             if (amountRemaining <= 0 && !actioncomplete)
@@ -611,7 +614,7 @@ namespace QuestGenerator
                 {
                     questGen.SuccessConsequences();
                 }
-                
+
             }
         }
 
@@ -641,7 +644,7 @@ namespace QuestGenerator
                 questGen.currentActionIndex++;
                 actioncomplete = true;
                 questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
-                if (questGen.currentActionIndex<questGen.actionsInOrder.Count)
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                 {
                     questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
                 }
@@ -649,7 +652,7 @@ namespace QuestGenerator
                 {
                     questGen.SuccessConsequences();
                 }
-                
+
             }
         }
 
@@ -657,14 +660,14 @@ namespace QuestGenerator
         {
             foreach (ItemRosterElement item in items)
             {
-                if (item.EquipmentElement.Item == this.itemTarget)
+                if (item.EquipmentElement.Item == itemTarget)
                 {
-                    this.itemAmount -= item.Amount;
+                    itemAmount -= item.Amount;
                     questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], questGen.journalLogs[this.index].CurrentProgress + item.Amount);
                 }
             }
 
-            if (this.itemAmount <= 0 && !actioncomplete)
+            if (itemAmount <= 0 && !actioncomplete)
             {
                 questGen.currentActionIndex++;
                 actioncomplete = true;
@@ -695,20 +698,20 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetItem.Name.ToString();
-                    this.itemTarget = targetItem;
+                    itemTarget = targetItem;
                     break;
                 }
             }
         }
 
-        public override TextObject getDescription(string strategy)
+        public override TextObject getDescription(string strategy, int pair)
         {
             TextObject strat = new TextObject("empty", null);
             switch (strategy)
             {
                 case "Gather raw materials":
                     strat = new TextObject("I need you to gather {ITEM}. Can you do that for me?", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
             }
             return strat;
@@ -721,7 +724,7 @@ namespace QuestGenerator
             {
                 case "Gather raw materials":
                     strat = new TextObject("Gather {ITEM}.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
                     break;
             }
             return strat;
@@ -733,11 +736,11 @@ namespace QuestGenerator
             switch (strategy)
             {
                 case "Gather raw materials":
-                    strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is part of the {CULTURE} culture.", null);
-                    strat.SetTextVariable("ITEM", this.itemTarget.Name);
-                    strat.SetTextVariable("TYPE", this.itemTarget.ItemType.ToString());
-                    strat.SetTextVariable("CATEGORY", this.itemTarget.ItemCategory.ToString());
-                    strat.SetTextVariable("CULTURE", this.itemTarget.Culture.ToString());
+                    strat = new TextObject("{ITEM} is a type of {TYPE}, belonging to the category of {CATEGORY} and is valued around {VALUE} gold coins.", null);
+                    strat.SetTextVariable("ITEM", itemTarget.Name);
+                    strat.SetTextVariable("TYPE", itemTarget.ItemType.ToString());
+                    strat.SetTextVariable("CATEGORY", itemTarget.ItemCategory.ToString());
+                    strat.SetTextVariable("VALUE", itemTarget.Value);
                     break;
             }
             return strat.ToString();

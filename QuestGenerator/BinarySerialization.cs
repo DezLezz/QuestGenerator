@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     /// <summary>
     /// Functions for performing common binary Serialization operations.

@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator.QuestBuilder.CustomBT
+namespace ThePlotLords.QuestBuilder.CustomBT
 {
     [XmlInclude(typeof(CustomBTMotivation)), XmlInclude(typeof(CustomBTSelector)), XmlInclude(typeof(CustomBTSequence)), XmlInclude(typeof(CustomBTAction))]
     public abstract class CustomBTNode
@@ -55,7 +51,7 @@ namespace QuestGenerator.QuestBuilder.CustomBT
 
         public abstract CustomBTState run(CustomBTStep step, IssueBase questBase, QuestGenTestIssue questGen, bool alternative);
 
-        public abstract CustomBTState bringTargetsBack( QuestBase questBase, QuestGenTestQuest questGen);
+        public abstract CustomBTState bringTargetsBack(QuestBase questBase, QuestGenTestQuest questGen);
         public abstract CustomBTState bringTargetsBack(IssueBase questBase, QuestGenTestIssue questGen, bool alternative);
 
         public abstract void updateHeroTargets(string targetString, Hero targetHero);

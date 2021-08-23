@@ -1,18 +1,15 @@
 ﻿using Helpers;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
 using static TaleWorlds.CampaignSystem.QuestBase;
-using QuestGenerator.QuestBuilder;
-using QuestGenerator.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class subquestAction : actionTarget
     {
@@ -27,36 +24,36 @@ namespace QuestGenerator
 
         public bool questCreated = false;
 
-        public subquestAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+        public subquestAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public subquestAction() { }
 
         public override Hero GetHeroTarget()
         {
-            return this.heroTarget;
+            return heroTarget;
         }
 
         public override void SetHeroTarget(Hero newH)
         {
-            this.heroTarget = newH;
+            heroTarget = newH;
         }
 
         public override Settlement GetSettlementTarget()
         {
-            return this.settlementTarget;
+            return settlementTarget;
         }
 
         public override void SetSettlementTarget(Settlement newS)
         {
-            this.settlementTarget = newS;
+            settlementTarget = newS;
         }
 
         public override void bringTargetsBack()
         {
-            if (this.settlementTarget == null)
+            if (settlementTarget == null)
             {
-                var setName = this.settlementTargetString;
+                var setName = settlementTargetString;
 
                 Settlement[] array = (from x in Settlement.All where (x.Name.ToString() == setName) select x).ToArray<Settlement>();
 
@@ -66,21 +63,21 @@ namespace QuestGenerator
                 }
                 if (array.Length == 1)
                 {
-                    this.settlementTarget = array[0];
+                    settlementTarget = array[0];
                 }
             }
 
-            if (this.heroTarget == null)
+            if (heroTarget == null)
             {
                 var setName = this.Action.param[0].target;
 
-                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -92,13 +89,13 @@ namespace QuestGenerator
                 string targetHero = "none";
                 Hero newHero = new Hero();
 
-                if (this.index > 0)
+                if (index > 0)
                 {
                     if (alternative)
                     {
-                        if (questGen.alternativeActionsInOrder[this.index - 1].action == "goto")
+                        if (questGen.alternativeActionsInOrder[index - 1].action == "goto")
                         {
-                            Settlement settlement = questGen.alternativeActionsInOrder[this.index - 1].GetSettlementTarget();
+                            Settlement settlement = questGen.alternativeActionsInOrder[index - 1].GetSettlementTarget();
 
 
                             foreach (Hero h in settlement.Notables)
@@ -118,7 +115,7 @@ namespace QuestGenerator
                         {
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == this.questGiver.MapFaction)
+                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == questGiver.MapFaction)
                                 {
                                     return true;
                                 }
@@ -141,9 +138,9 @@ namespace QuestGenerator
                     }
                     else
                     {
-                        if (questGen.actionsInOrder[this.index - 1].action == "goto")
+                        if (questGen.actionsInOrder[index - 1].action == "goto")
                         {
-                            Settlement settlement = questGen.actionsInOrder[this.index - 1].GetSettlementTarget();
+                            Settlement settlement = questGen.actionsInOrder[index - 1].GetSettlementTarget();
 
 
                             foreach (Hero h in settlement.Notables)
@@ -163,7 +160,7 @@ namespace QuestGenerator
                         {
                             Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                             {
-                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == this.questGiver.MapFaction)
+                                if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == questGiver.MapFaction)
                                 {
                                     return true;
                                 }
@@ -185,11 +182,11 @@ namespace QuestGenerator
                         }
                     }
                 }
-                else if (this.index == 0)
+                else if (index == 0)
                 {
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
-                        if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == this.questGiver.MapFaction)
+                        if (Enumerable.Any<Hero>(x.Notables, (Hero y) => y.CanHaveQuestsOrIssues()) && x.MapFaction == questGiver.MapFaction)
                         {
                             return true;
                         }
@@ -226,37 +223,46 @@ namespace QuestGenerator
                 }
             }
 
-            else if (this.settlementTarget == null)
+            else if (settlementTarget == null)
             {
-                this.settlementTarget = this.heroTarget.CurrentSettlement;
-                this.settlementTargetString = this.settlementTarget.Name.ToString();
+                settlementTarget = heroTarget.CurrentSettlement;
+                settlementTargetString = settlementTarget.Name.ToString();
             }
 
 
-            this.children[0].origin_quest_hero = this.heroTarget.Name.ToString();
-            PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
-            Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, this.heroTarget);
+            children[0].origin_quest_hero = questGiver.Name.ToString();
+
+            if (HeroMotivations.ContainsKey(heroTarget))
+            {
+                HeroMotivations[heroTarget] = "WaitingForSubQuest";
+            }
+            else
+            {
+                HeroMotivations.Add(heroTarget, "WaitingForSubQuest");
+            }
+            
 
         }
 
         public IssueBase OnIssueSelected(in PotentialIssueData pid, Hero issueOwner)
         {
-            return new QuestGenTestCampaignBehavior.QuestGenTestIssue(issueOwner, this.children[0]);
+            return new QuestGenTestCampaignBehavior.QuestGenTestIssue(issueOwner, children[0]);
         }
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            //if (this.heroTarget.CanHaveQuestsOrIssues() && !questCreated)
-            //{
-                
-            //    questCreated = true;
-            //}
-            if (this.heroTarget.Issue == null && !actioncomplete)
+            if (heroTarget.CanHaveQuestsOrIssues() && !questCreated)
             {
-                if (this.index == 0)
+                PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+                Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, heroTarget);
+                questCreated = true;
+            }
+            if (heroTarget.Issue == null && !actioncomplete && !actionInLog)
+            {
+                if (index == 0)
                 {
                     questGen.currentActionIndex++;
-                    this.actioncomplete = true;
+                    actioncomplete = true;
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -266,10 +272,10 @@ namespace QuestGenerator
                         questGen.SuccessConsequences();
                     }
                 }
-                else if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                else if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                 {
                     questGen.currentActionIndex++;
-                    this.actioncomplete = true;
+                    actioncomplete = true;
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -280,17 +286,18 @@ namespace QuestGenerator
                     }
                 }
             }
-            else if (!actioncomplete)
+            else if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    this.actionInLog = true;
-                    if (this.settlementTarget != null)
+                    actionInLog = true;
+                    if (settlementTarget != null)
                     {
-                        TextObject textObject = new TextObject("Talk with {HERO} in {SETTLEMENT}.", null);
-                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                        textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                        questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        TextObject textObject = new TextObject("It appears someone wants to have a word with you. Talk with {HERO} in {SETTLEMENT} and find out what he wants.", null);
+                        textObject.SetTextVariable("HERO", heroTarget.Name);
+                        textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                     }
                     else
                     {
@@ -299,15 +306,16 @@ namespace QuestGenerator
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        this.actionInLog = true;
-                        if (this.settlementTarget != null)
+                        actionInLog = true;
+                        if (settlementTarget != null)
                         {
-                            TextObject textObject = new TextObject("Talk with {HERO} in {SETTLEMENT}.", null);
-                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                            textObject.SetTextVariable("SETTLEMENT", this.settlementTarget.Name);
-                            questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                            TextObject textObject = new TextObject("It appears someone wants to have a word with you. Talk with {HERO} in {SETTLEMENT} and find out what he wants.", null);
+                            textObject.SetTextVariable("HERO", heroTarget.Name);
+                            textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                         }
                         else
                         {
@@ -316,21 +324,24 @@ namespace QuestGenerator
                     }
                 }
             }
-            
-            
+
+
         }
 
         public override void OnQuestCompletedEventQuest(QuestBase quest, QuestCompleteDetails questCompleteDetails, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
-            if (quest.QuestGiver == this.heroTarget)
+            if (quest.QuestGiver == heroTarget)
             {
-                if (!this.actioncomplete)
+                if (!actioncomplete)
                 {
                     questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
 
                     questGen.currentActionIndex++;
-                    this.actioncomplete = true;
+                    actioncomplete = true;
                     questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                    player_data.player_CompletedSubQuests++;
+                    string playerData = @"..\..\Modules\ThePlotLords\PlayerData\" + player_data_ID + ".txt";
+                    JsonSerialization.WriteToJsonFile<PlayerData>(playerData, player_data);
                     if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
                     {
                         questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
@@ -351,7 +362,7 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetHero.Name.ToString();
-                    this.heroTarget = targetHero;
+                    heroTarget = targetHero;
                     break;
                 }
             }

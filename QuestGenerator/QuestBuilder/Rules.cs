@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace QuestGenerator.QuestBuilder
+namespace ThePlotLords.QuestBuilder
 {
     public class Rules
     {
@@ -14,8 +10,7 @@ namespace QuestGenerator.QuestBuilder
         public string strategy { get; set; }
         public string explanation { get; set; }
 
-        public List<float> weights
-        {
+        public List<float> weights {
 
             get { return _weights; }
 
@@ -37,7 +32,7 @@ namespace QuestGenerator.QuestBuilder
 
         public List<Action> getNewAction(int index)
         {
-            var list = actions[index];
+            var list = this.actions[index];
             List<Action> newList = new List<Action>();
 
             foreach (Action a in list)
@@ -48,7 +43,7 @@ namespace QuestGenerator.QuestBuilder
                     Parameter newP = new Parameter(p.type, p.flag, p.sibling_ref);
                     newParamList.Add(newP);
                 }
-                Action newA = new Action(a.name,a.type, a.index,a.type_of_Target, newParamList);
+                Action newA = new Action(a.name, a.type, a.index, a.type_of_Target, newParamList);
                 newList.Add(newA);
             }
 

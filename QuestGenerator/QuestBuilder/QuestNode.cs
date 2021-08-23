@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace QuestGenerator.QuestBuilder
+namespace ThePlotLords.QuestBuilder
 {
     public class QuestNode
     {
-        
+
         public string nodeName { get; set; }
         public Quest parentQuest { get; set; }
         public QuestNode parentNode { get; set; }
@@ -19,12 +15,10 @@ namespace QuestGenerator.QuestBuilder
         public Strategy strategy { get; set; }
         public Rules rule { get; set; }
 
-        public List<QuestNode> Depth
-        {
-            get
-            {
+        public List<QuestNode> Depth {
+            get {
                 List<QuestNode> path = new List<QuestNode>();
-                foreach (QuestNode node in childNodes)
+                foreach (QuestNode node in this.childNodes)
                 {
                     List<QuestNode> tmp = node.Depth;
                     if (tmp.Count > path.Count)

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace QuestGenerator.QuestBuilder
+namespace ThePlotLords.QuestBuilder
 {
     public class Quest
     {
@@ -25,15 +21,15 @@ namespace QuestGenerator.QuestBuilder
 
         public Quest(int questNumb, QuestGiver questGiver, List<Strategy> strategies, List<Rules> rules)
         {
-            QuestNumb = questNumb;
-            QuestGiver = questGiver;
-            Strategies = strategies;
-            Rules = rules;
+            this.QuestNumb = questNumb;
+            this.QuestGiver = questGiver;
+            this.Strategies = strategies;
+            this.Rules = rules;
             this.steps = new List<Action>();
-            charCounter = 0;
-            itemCounter = 0;
-            locCounter = 0;
-            enemyCounter = 0;
+            this.charCounter = 0;
+            this.itemCounter = 0;
+            this.locCounter = 0;
+            this.enemyCounter = 0;
         }
     }
 }

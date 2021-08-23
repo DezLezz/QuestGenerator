@@ -1,13 +1,9 @@
-﻿using QuestGenerator.QuestBuilder.CustomBT;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 using TaleWorlds.Core;
+using ThePlotLords.QuestBuilder.CustomBT;
 
-namespace QuestGenerator.QuestBuilder
+namespace ThePlotLords.QuestBuilder
 {
     public class QuestGiver
     {
@@ -34,12 +30,12 @@ namespace QuestGenerator.QuestBuilder
 
         public QuestGiver(string questGiverName, List<Motivation> motivations, List<string> characters, List<string> items, List<string> enemies, List<string> locations)
         {
-            QuestGiverName = questGiverName;
-            Motivations = motivations;
-            Characters = characters;
-            Items = items;
-            Enemies = enemies;
-            Locations = locations;
+            this.QuestGiverName = questGiverName;
+            this.Motivations = motivations;
+            this.Characters = characters;
+            this.Items = items;
+            this.Enemies = enemies;
+            this.Locations = locations;
             //subQuests = new List<Quest>();
         }
 
@@ -51,19 +47,19 @@ namespace QuestGenerator.QuestBuilder
             {
                 int r = rnd.Next(this.Motivations.Count);
 
-                customBTTree = new CustomBTSelector(null, CustomBTType.selector);
-                customBTTree.name = this.Motivations[r].name;
+                this.customBTTree = new CustomBTSelector(null, CustomBTType.selector);
+                this.customBTTree.name = this.Motivations[r].name;
 
                 CustomBTNode motivNode1 = new CustomBTMotivation(null, CustomBTType.motivation);
                 motivNode1.name = this.Motivations[r].name;
-                customBTTree.addNode(motivNode1);
+                this.customBTTree.addNode(motivNode1);
 
                 CustomBTNode motivNode2 = new CustomBTMotivation(null, CustomBTType.motivation);
                 motivNode2.name = this.Motivations[r].name;
-                customBTTree.addNode(motivNode2);
+                this.customBTTree.addNode(motivNode2);
 
                 List<Rules> rules2 = new List<Rules>();
-                
+
                 foreach (Rules ru in rules)
                 {
                     rules2.Add(new Rules(ru.name, ru.type, -1, ru.actions, ru.weights));
@@ -73,13 +69,13 @@ namespace QuestGenerator.QuestBuilder
                 QuestNode qNode = new QuestNode(this.Motivations[r].name, q, null);
                 qNode.motivation = this.Motivations[r];
                 q.root = qNode;
-                Expand(q, q.root, questNumb, strategies, rules, motivNode1);
+                this.Expand(q, q.root, questNumb, strategies, rules, motivNode1);
 
                 Strategy chosenStrat = new Strategy();
 
-                foreach(Strategy s in this.Motivations[r].strategies)
+                foreach (Strategy s in this.Motivations[r].strategies)
                 {
-                    if (customBTTree.Children[0].info == s.name)
+                    if (this.customBTTree.Children[0].info == s.name)
                     {
                         chosenStrat = s;
                     }
@@ -89,7 +85,12 @@ namespace QuestGenerator.QuestBuilder
                 QuestNode qNode1 = new QuestNode(this.Motivations[r].name, q1, null);
                 qNode1.motivation = this.Motivations[r];
                 q1.root = qNode1;
-                Expand(q1, q1.root, questNumb, strategies, rules2, motivNode2, chosenStrat);
+                this.Expand(q1, q1.root, questNumb, strategies, rules2, motivNode2, chosenStrat);
+
+                if (q1.steps.Count ==0)
+                {
+                    q.steps = new List<Action>();
+                }
 
                 return q;
             }
@@ -99,9 +100,9 @@ namespace QuestGenerator.QuestBuilder
                 int r = rnd.Next(this.Motivations.Count);
 
 
-                customBTTree = new CustomBTMotivation(null, CustomBTType.motivation);
+                this.customBTTree = new CustomBTMotivation(null, CustomBTType.motivation);
 
-                customBTTree.name = this.Motivations[r].name;
+                this.customBTTree.name = this.Motivations[r].name;
 
                 Quest q = new Quest(questNumb, this, strategies, rules);
 
@@ -111,7 +112,7 @@ namespace QuestGenerator.QuestBuilder
 
                 q.root = qNode;
 
-                Expand(q, q.root, questNumb, strategies, rules, customBTTree);
+                this.Expand(q, q.root, questNumb, strategies, rules, this.customBTTree);
 
                 return q;
             }
@@ -136,10 +137,24 @@ namespace QuestGenerator.QuestBuilder
                         int r = rnd.Next(node.motivation.strategies.Count);
                         sequence = node.motivation.strategies[r].actions;
                         currentTreeNode.info = node.motivation.strategies[r].name;
-                    } 
+                    }
                     else
                     {
+                        foreach (Strategy s in node.motivation.strategies)
+                        {
+                            if (s == alreadyChosenStrat)
+                            {
+                                sequence = s.actions;
+                                currentTreeNode.info = s.name;
+                            }
+                        }
 
+                        if (sequence.IsEmpty())
+                        {
+                            int r = rnd.Next(node.motivation.strategies.Count);
+                            sequence = node.motivation.strategies[r].actions;
+                            currentTreeNode.info = node.motivation.strategies[r].name;
+                        }
                     }
 
                 }
@@ -162,17 +177,17 @@ namespace QuestGenerator.QuestBuilder
                         newNode.name = this.Motivations[r].name;
                         newNode.subquest_info = node.parentNode.parentNode.action.name.Replace("<", "").Replace(">", "");
                         newNode.origin_quest_motiv = q.root.motivation.name;
-                        //InformationManager.DisplayMessage(new InformationMessage(newNode.info));
+                        //InformationManager.DisplayMessage(new InformationMessage("subquest"));
                         currentTreeNode.addNode(newNode);
 
                     }
                     else
                     {
-                        int index = weightedChoice(node.rule.weights);
+                        int index = this.weightedChoice(node.rule.weights);
 
                         sequence = node.rule.getNewAction(index);
 
-                        node.rule.weights = updateWeights(node.rule.actions, node.rule.weights, index, q.root.Depth.Count);
+                        node.rule.weights = this.updateWeights(node.rule.actions, node.rule.weights, index, q.root.Depth.Count);
 
                     }
                 }
@@ -221,24 +236,34 @@ namespace QuestGenerator.QuestBuilder
 
                     }
                 }
-                BindParameters(node);
+                this.BindParameters(node);
                 for (int i = 0; i < node.childNodes.Count; i++)
                 {
                     var child = node.childNodes[i];
                     var treeChild = currentTreeNode.Children[i];
-                    Expand(q, child, questNumb, strategies, rules, treeChild);
+                    this.Expand(q, child, questNumb, strategies, rules, treeChild);
                 }
             }
 
 
         }
 
-        public void BindParameters(QuestNode node) 
+        public void BindParameters(QuestNode node)
         {
             foreach (QuestNode n in node.childNodes)
             {
                 if (n.action != null)
                 {
+                    if (n.action.name == "<steal>" && n.parentNode != null)
+                    {
+                        if (n.parentNode.action != null)
+                        {
+                            if (n.parentNode.action.name == "<get>")
+                            {
+                                n.action.param[0].flag = 0;
+                            }
+                        }
+                    }
                     foreach (Parameter param1 in n.action.param)
                     {
                         if (param1.flag == 0)
@@ -292,7 +317,7 @@ namespace QuestGenerator.QuestBuilder
                                 node.parentQuest.itemCounter++;
                             }
                             else if (param1.type == "Location")
-                            {                                
+                            {
                                 param1.target = node.parentQuest.QuestGiver.Locations[node.parentQuest.locCounter];
                                 node.parentQuest.locCounter++;
                             }

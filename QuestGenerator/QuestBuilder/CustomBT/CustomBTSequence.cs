@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator.QuestBuilder.CustomBT
+namespace ThePlotLords.QuestBuilder.CustomBT
 {
     public class CustomBTSequence : CustomBTNode
     {
@@ -106,7 +102,7 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                 foreach (CustomBTNode node in this.Children)
                 {
                     node.updateHeroTargets(targetString, targetHero);
-                    
+
                 }
             }
 

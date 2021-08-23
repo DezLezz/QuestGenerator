@@ -1,20 +1,20 @@
 ﻿<Module>
-  <Name value="QuestGenerator a Bannerlord Mod"/>
-  <Id value="QuestGenerator"/>
-  <Version value="v1.0.0"/>
+  <Name value="The Plot Lords"/>
+  <Id value="ThePlotLords"/>
+  <Version value="v1.6.1"/>
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>
-    <DependedModule Id="Native"/>
-    <DependedModule Id="SandBoxCore"/>
-    <DependedModule Id="Sandbox"/>
-    <DependedModule Id="StoryMode" />
+    <DependedModule Id="Native"  DependentVersion="e1.6.1"/>
+    <DependedModule Id="SandBoxCore"  DependentVersion="e1.6.1"/>
+    <DependedModule Id="Sandbox"  DependentVersion="e1.6.1"/>
+    <DependedModule Id="StoryMode"  DependentVersion="e1.6.1"/>
   </DependedModules>
   <SubModules>
     <SubModule>
-      <Name value="QuestGenerator"/>
-      <DLLName value="QuestGenerator.dll"/>
-      <SubModuleClassType value="QuestGenerator.SubModule"/>
+      <Name value="ThePlotLords"/>
+      <DLLName value="ThePlotLords.dll"/>
+      <SubModuleClassType value="ThePlotLords.SubModule"/>
       <Tags>
         <Tag key="DedicatedServerType" value="none" />
         <Tag key="IsNoRenderModeElement" value="false" />

@@ -1,18 +1,18 @@
-﻿using QuestGenerator.QuestBuilder.CustomBT;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
+using ThePlotLords.QuestBuilder.CustomBT;
 using static TaleWorlds.CampaignSystem.QuestBase;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
-    [XmlInclude(typeof(gotoAction)), XmlInclude(typeof(giveAction)), XmlInclude(typeof(gatherAction)), 
-        XmlInclude(typeof(exchangeAction)), XmlInclude(typeof(exploreAction)), XmlInclude(typeof(listenAction)), 
+    [XmlInclude(typeof(gotoAction)), XmlInclude(typeof(giveAction)), XmlInclude(typeof(gatherAction)),
+        XmlInclude(typeof(exchangeAction)), XmlInclude(typeof(exploreAction)), XmlInclude(typeof(listenAction)),
         XmlInclude(typeof(reportAction)), XmlInclude(typeof(subquestAction)), XmlInclude(typeof(captureAction))
         , XmlInclude(typeof(killAction)), XmlInclude(typeof(freeAction)), XmlInclude(typeof(takeAction))
         , XmlInclude(typeof(useAction)), XmlInclude(typeof(damageAction))]
@@ -32,9 +32,9 @@ namespace QuestGenerator
 
         public bool actionInLog = false;
 
-        public QuestGenerator.QuestBuilder.Action Action { get; set; }
+        public ThePlotLords.QuestBuilder.Action Action { get; set; }
 
-        public actionTarget(string action, QuestGenerator.QuestBuilder.Action action1)
+        public actionTarget(string action, ThePlotLords.QuestBuilder.Action action1)
         {
             this.action = action;
             this.Action = action1;
@@ -177,7 +177,7 @@ namespace QuestGenerator
 
         }
 
-        public virtual TextObject getDescription(string strategy)
+        public virtual TextObject getDescription(string strategy, int pair)
         {
             return new TextObject();
         }

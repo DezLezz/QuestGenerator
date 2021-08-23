@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TaleWorlds.CampaignSystem;
+﻿using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator.QuestBuilder.CustomBT
+namespace ThePlotLords.QuestBuilder.CustomBT
 {
     public class CustomBTAction : CustomBTNode
     {
@@ -74,7 +69,7 @@ namespace QuestGenerator.QuestBuilder.CustomBT
                     this.ActionTarget.questGiver = questGen.missionHero;
                     this.ActionTarget.questGiverString = questGen.missionHero.Name.ToString();
                 }
-                
+
 
                 if (alternative)
                 {
@@ -99,7 +94,8 @@ namespace QuestGenerator.QuestBuilder.CustomBT
 
         public override CustomBTState run(CustomBTStep step, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (step == CustomBTStep.questQ) {
+            if (step == CustomBTStep.questQ)
+            {
 
                 this.ActionTarget.QuestQ(questBase, questGen);
                 return CustomBTState.success;
@@ -108,9 +104,9 @@ namespace QuestGenerator.QuestBuilder.CustomBT
             return CustomBTState.success;
         }
 
-        public override CustomBTState bringTargetsBack( IssueBase issueBase, QuestGenTestIssue questGen, bool alternative)
+        public override CustomBTState bringTargetsBack(IssueBase issueBase, QuestGenTestIssue questGen, bool alternative)
         {
-            
+
             if (this.ActionTarget != null)
             {
                 if (alternative)
@@ -129,7 +125,7 @@ namespace QuestGenerator.QuestBuilder.CustomBT
             return CustomBTState.success;
         }
 
-        public override CustomBTState bringTargetsBack( QuestBase questBase, QuestGenTestQuest questGen)
+        public override CustomBTState bringTargetsBack(QuestBase questBase, QuestGenTestQuest questGen)
         {
             this.ActionTarget.bringTargetsBack();
             questGen.actionsInOrder.Add(this.ActionTarget);
@@ -139,7 +135,7 @@ namespace QuestGenerator.QuestBuilder.CustomBT
 
         public override void updateHeroTargets(string targetString, Hero targetHero)
         {
-             this.ActionTarget.updateHeroTargets(targetString, targetHero);
+            this.ActionTarget.updateHeroTargets(targetString, targetHero);
         }
         public override void updateSettlementTargets(string targetString, Settlement targetSettlement)
         {

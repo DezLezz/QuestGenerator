@@ -1,51 +1,47 @@
 ﻿using Helpers;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
-using QuestGenerator.QuestBuilder;
-using QuestGenerator.QuestBuilder.CustomBT;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class reportAction : actionTarget
     {
         [XmlIgnore]
         public Hero heroTarget;
-        
-        public reportAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+
+        public reportAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public reportAction() { }
 
         public override Hero GetHeroTarget()
         {
-            return this.heroTarget;
+            return heroTarget;
         }
 
         public override void SetHeroTarget(Hero newH)
         {
-            this.heroTarget = newH;
+            heroTarget = newH;
         }
 
         public override void bringTargetsBack()
         {
-            if (this.heroTarget == null)
+            if (heroTarget == null)
             {
                 var setName = this.Action.param[0].target;
 
-                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
 
@@ -56,7 +52,7 @@ namespace QuestGenerator
                 string npcNumb = this.Action.param[0].target;
                 string targetHero = "none";
                 Hero newHero = new Hero();
-                int i = this.index;
+                int i = index;
                 if (i > 0)
                 {
                     if (alternative)
@@ -71,9 +67,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                            foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != this.questGiver)
+                                if (hero != questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -93,9 +89,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                            foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != this.questGiver)
+                                if (hero != questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -103,14 +99,14 @@ namespace QuestGenerator
                             }
                         }
                     }
-                    
+
                 }
 
                 else if (i == 0)
                 {
-                    foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                    foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                     {
-                        if (hero != this.questGiver)
+                        if (hero != questGiver)
                         {
                             targetHero = hero.Name.ToString();
                             newHero = hero;
@@ -142,53 +138,53 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!actioncomplete)
+            if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    if (this.heroTarget != null)
+                    if (heroTarget != null)
                     {
-                        this.actionInLog = true;
-                        questBase.AddTrackedObject(this.heroTarget);
-                        TextObject textObject = new TextObject("Report to {HERO}", null);
-                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                        questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-
-                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(this.heroTarget, this.index, this.questGiver, questBase, questGen), this);
+                        actionInLog = true;
+                        questBase.AddTrackedObject(heroTarget);
+                        TextObject textObject = new TextObject("You've completed your task. Report the events to {HERO}.", null);
+                        textObject.SetTextVariable("HERO", heroTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
+                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
                     }
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        this.actionInLog = true;
-                        if (this.heroTarget != null)
+                        actionInLog = true;
+                        if (heroTarget != null)
                         {
-                            questBase.AddTrackedObject(this.heroTarget);
-                            TextObject textObject = new TextObject("Report to {HERO}", null);
-                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
-                            questGen.journalLogs[this.index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-
-                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(this.heroTarget, this.index, this.questGiver, questBase, questGen), this);
+                            questBase.AddTrackedObject(heroTarget);
+                            TextObject textObject = new TextObject("You've completed your task. Report the events to {HERO}.", null);
+                            textObject.SetTextVariable("HERO", heroTarget.Name);
+                            questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
+                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetReportActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
                         }
                     }
                 }
             }
-            
-            
+
+
         }
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            return GetReportActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen);
+            return this.GetReportActionDialogFlow(heroTarget, index, this.questGiver, questBase, questGen);
         }
 
         private DialogFlow GetReportActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            TextObject npcLine1 = new TextObject("Hello there, what brings you here today?", null);
-            TextObject playerLine1 = new TextObject(QuestHelperClass.ReportDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
+            TextObject npcLine1 = new TextObject("Hello there, have you done the job?", null);
+            TextObject playerLine1 = new TextObject("Yes. " + QuestHelperClass.ReportDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
             StringHelpers.SetCharacterProperties("QUEST_GIVER", questGiver.CharacterObject, playerLine1);
-            TextObject npcLine2 = new TextObject("Thank you, I'll take into account your report and act accordingly.", null);
+            TextObject npcLine2 = new TextObject("Thank you, you've been a great help and I won't forget this.", null);
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).PlayerLine(playerLine1, null).NpcLine(npcLine2, null, null).Consequence(delegate
             {
                 this.reportConsequences(index, questBase, questGen);
@@ -197,7 +193,7 @@ namespace QuestGenerator
 
         private void reportConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!this.actioncomplete)
+            if (!actioncomplete)
             {
                 questGen.currentActionIndex++;
                 questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
@@ -221,7 +217,7 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetHero.Name.ToString();
-                    this.heroTarget = targetHero;
+                    heroTarget = targetHero;
                     break;
                 }
             }
@@ -234,7 +230,7 @@ namespace QuestGenerator
         public override void updateItemTargets(string targetString, ItemObject targetItem)
         {
         }
-        
+
 
     }
 }

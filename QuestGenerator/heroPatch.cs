@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using TaleWorlds.CampaignSystem;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     class heroPatch
     {

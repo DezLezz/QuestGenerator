@@ -1,52 +1,48 @@
 ﻿using Helpers;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Xml.Serialization;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Localization;
-using System.Xml.Serialization;
-using static QuestGenerator.QuestGenTestCampaignBehavior;
-using QuestGenerator.QuestBuilder;
-using QuestGenerator.QuestBuilder.CustomBT;
+using ThePlotLords.QuestBuilder;
+using ThePlotLords.QuestBuilder.CustomBT;
+using static ThePlotLords.QuestGenTestCampaignBehavior;
 
-namespace QuestGenerator
+namespace ThePlotLords
 {
     public class listenAction : actionTarget
     {
         [XmlIgnore]
         public Hero heroTarget;
 
-        public listenAction(string action, QuestGenerator.QuestBuilder.Action action1) : base(action, action1)
+        public listenAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
         public listenAction() { }
 
         public override Hero GetHeroTarget()
         {
-            return this.heroTarget;
+            return heroTarget;
         }
 
         public override void SetHeroTarget(Hero newH)
         {
-            this.heroTarget = newH;
+            heroTarget = newH;
         }
 
         public override void bringTargetsBack()
         {
-            if (this.heroTarget == null)
+            if (heroTarget == null)
             {
                 var setName = this.Action.param[0].target;
 
-                this.heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
 
-            if (this.questGiver == null)
+            if (questGiver == null)
             {
-                var setName = this.questGiverString;
+                var setName = questGiverString;
 
-                this.questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+                questGiver = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
             }
         }
         public override void IssueQ(IssueBase questBase, QuestGenTestIssue questGen, bool alternative)
@@ -56,14 +52,14 @@ namespace QuestGenerator
                 string npcNumb = this.Action.param[0].target;
                 string targetHero = "none";
                 Hero newHero = new Hero();
-                int i = this.index;
+                int i = index;
                 if (i > 0)
                 {
                     if (alternative)
                     {
                         bool questFlag = false;
                         int questindex = 0;
-                        for (int j = 0; j < this.index; j++)
+                        for (int j = 0; j < index; j++)
                         {
                             if (questGen.alternativeActionsInOrder[j].action == "quest")
                             {
@@ -91,9 +87,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                            foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != this.questGiver)
+                                if (hero != questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -105,7 +101,7 @@ namespace QuestGenerator
                     {
                         bool questFlag = false;
                         int questindex = 0;
-                        for (int j = 0; j < this.index; j++)
+                        for (int j = 0; j < index; j++)
                         {
                             if (questGen.actionsInOrder[j].action == "quest")
                             {
@@ -133,9 +129,9 @@ namespace QuestGenerator
                         }
                         else
                         {
-                            foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                            foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                             {
-                                if (hero != this.questGiver)
+                                if (hero != questGiver)
                                 {
                                     targetHero = hero.Name.ToString();
                                     newHero = hero;
@@ -148,9 +144,9 @@ namespace QuestGenerator
 
                 else if (i == 0)
                 {
-                    foreach (Hero hero in this.questGiver.CurrentSettlement.Notables)
+                    foreach (Hero hero in questGiver.CurrentSettlement.Notables)
                     {
-                        if (hero != this.questGiver)
+                        if (hero != questGiver)
                         {
                             targetHero = hero.Name.ToString();
                             newHero = hero;
@@ -160,7 +156,7 @@ namespace QuestGenerator
 
                 if (targetHero != "none")
                 {
-                    
+
                     if (alternative)
                     {
                         questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
@@ -183,60 +179,60 @@ namespace QuestGenerator
 
         public override void QuestQ(QuestBase questBase, QuestGenTestQuest questGen)
         {
-            if (!actioncomplete)
+            if (!actioncomplete && !actionInLog)
             {
-                if (this.index == 0)
+                if (index == 0)
                 {
-                    if (this.heroTarget != null)
+                    if (heroTarget != null)
                     {
-                        this.actionInLog = true;
-                        questBase.AddTrackedObject(this.heroTarget);
-                        TextObject textObject = new TextObject("Listen to {HERO}", null);
-                        textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                        actionInLog = true;
+                        questBase.AddTrackedObject(heroTarget);
+                        TextObject textObject = new TextObject("{HERO} might have the information you need, listen to what he has to say.", null);
+                        textObject.SetTextVariable("HERO", heroTarget.Name);
                         questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-
-                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetListenActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
+                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetListenActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
 
                     }
                 }
                 else
                 {
-                    if (questGen.actionsInOrder[this.index - 1].actioncomplete)
+                    if (questGen.actionsInOrder[index - 1].actioncomplete && questGen.currentActionIndex == index)
                     {
-                        if (this.heroTarget != null)
+                        if (heroTarget != null)
                         {
-                            this.actionInLog = true;
-                            questBase.AddTrackedObject(this.heroTarget);
-                            TextObject textObject = new TextObject("Listen to {HERO}", null);
-                            textObject.SetTextVariable("HERO", this.heroTarget.Name);
+                            actionInLog = true;
+                            questBase.AddTrackedObject(heroTarget);
+                            TextObject textObject = new TextObject("{HERO} might have the information you need, listen to what he has to say.", null);
+                            textObject.SetTextVariable("HERO", heroTarget.Name);
                             questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
-
-                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetListenActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen), this);
+                            InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
+                            Campaign.Current.ConversationManager.AddDialogFlow(this.GetListenActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
 
                         }
                     }
                 }
             }
-            
-            
+
+
         }
 
         public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
-            return GetListenActionDialogFlow(this.heroTarget, index, this.questGiver, questBase, questGen);
+            return this.GetListenActionDialogFlow(heroTarget, index, this.questGiver, questBase, questGen);
         }
 
         private DialogFlow GetListenActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
         {
             TextObject npcLine1 = new TextObject("Hello there.", null);
-            TextObject playerLine1 ;
+            TextObject playerLine1;
             bool questFlag = false;
             for (int i = 0; i < this.index; i++)
             {
                 if (questGen.actionsInOrder[i].action == "quest")
                 {
                     questFlag = true;
-                    
+
                 }
                 else if (questGen.actionsInOrder[i].action == "listen")
                 {
@@ -248,18 +244,18 @@ namespace QuestGenerator
             if (this.index == 0)
             {
                 npcLine2 = new TextObject(QuestHelperClass.ListenDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
-                playerLine1 = new TextObject("{QUEST_GIVER.LINK} has sent me, do you have any information to share?", null);
+                playerLine1 = new TextObject(QuestHelperClass.ListenPlayerDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
                 StringHelpers.SetCharacterProperties("QUEST_GIVER", questGiver.CharacterObject, playerLine1);
             }
-            else if (questFlag) 
+            else if (questFlag)
             {
                 playerLine1 = new TextObject("Alright, I've completed your task, what kind of information can you share with me?", null);
-                npcLine2 = new TextObject("So it seems. Very well, then. " + listenCalculator(questBase, questGen), null);
-            } 
+                npcLine2 = new TextObject("So it seems. Very well, then. " + this.listenCalculator(questBase, questGen), null);
+            }
             else
             {
                 npcLine2 = new TextObject(QuestHelperClass.ListenDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
-                playerLine1 = new TextObject("{QUEST_GIVER.LINK} has sent me, do you have any information to share?", null);
+                playerLine1 = new TextObject(QuestHelperClass.ListenPlayerDialog(questGen.chosenMission.info, questGen.ListenReportPair), null);
                 StringHelpers.SetCharacterProperties("QUEST_GIVER", questGiver.CharacterObject, playerLine1);
             }
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).PlayerLine(playerLine1, null).NpcLine(npcLine2, null, null).Consequence(delegate
@@ -293,7 +289,7 @@ namespace QuestGenerator
                 if (p.target == targetString)
                 {
                     p.target = targetHero.Name.ToString();
-                    this.heroTarget = targetHero;
+                    heroTarget = targetHero;
                     break;
                 }
             }
@@ -307,22 +303,51 @@ namespace QuestGenerator
         {
         }
 
-        public override TextObject getDescription(string strategy)
+        public override TextObject getDescription(string strategy, int pair)
         {
             TextObject strat = new TextObject("empty", null);
             switch (strategy)
             {
                 case "Interview NPC":
-                    strat = new TextObject("There's a person with information I require. Go talk to {HERO} and report back if the information is usefull.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (pair ==1)
+                    {
+                        strat = new TextObject("I've heard about someone from {SETTLEMENT} that was good at fixing wagons. It might be {HERO}, go and talk to him about coming to fix this settlements wagons.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("There are rumours of a fairly skilled blacksmith in {SETTLEMENT}. Talk with {HERO} and find out if the blacksmith would be willing to forge some tools for me.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
+                    }
+                    
                     break;
                 case "Check on NPC":
-                    strat = new TextObject("I need you to check up on {HERO} and report back if there is any problem.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (pair == 1)
+                    {
+                        strat = new TextObject("I've heard of a few attacks near {SETTLEMENT}. Talk with {HERO} and find out how everything is.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("I've sent my son to {SETTLEMENT} a couple days ago, but I haven't heard from him since. Talk with {HERO} and find out if he's ok.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        strat.SetTextVariable("SETTLEMENT", heroTarget.CurrentSettlement.Name);
+                    }
                     break;
                 case "Recruit":
-                    strat = new TextObject("Talk with {HERO} and find out if there are any soldiers worth recruiting nearby. Report back with your findings.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (pair == 1)
+                    {
+                        strat = new TextObject("This area has been a bit dangerous lately. Go talk with {HERO} and see if his settlement has some soldiers to spare.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Our settlement yielded a plentyful harvest this year. Talk with {HERO} and see if he can spare some workers to help us out.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                    }
                     break;
             }
             return strat;
@@ -335,15 +360,15 @@ namespace QuestGenerator
             {
                 case "Interview NPC":
                     strat = new TextObject("Interview {HERO}.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
                     break;
                 case "Check on NPC":
                     strat = new TextObject("Check on {HERO}.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
                     break;
                 case "Recruit":
                     strat = new TextObject("Find recruits from {HERO}.", null);
-                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
                     break;
             }
             return strat;
@@ -372,7 +397,14 @@ namespace QuestGenerator
                     {
                         if (a.action == "listen")
                         {
-                            stratObj = a.getListenString(strat);
+                            for (int i = questGen.actionsInOrder.Count -1; i >= 0; i--)
+                            {
+                                if (questGen.actionsInOrder[i].action == "listen")
+                                {
+                                    stratObj = a.getListenString(strat);
+                                }
+                            }
+                            
                             break;
                         }
                     }
@@ -452,7 +484,13 @@ namespace QuestGenerator
                     {
                         if (a.action == "listen")
                         {
-                            stratObj = a.getListenString(strat);
+                            for (int i = questGen.actionsInOrder.Count - 1; i >= 0; i--)
+                            {
+                                if (questGen.actionsInOrder[i].action == "listen")
+                                {
+                                    stratObj = a.getListenString(strat);
+                                }
+                            }
                             break;
                         }
                     }
@@ -601,5 +639,44 @@ namespace QuestGenerator
 
             return stratObj;
         }
+
+        public override string getListenString(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Check on NPC":
+                    strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
+                    strat.SetTextVariable("SETTLEMENT", heroTarget.LastSeenPlace.Name);
+
+                    break;
+                case "Recruit":
+                    Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
+                    {
+                        return x != questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == questGiver.MapFaction && x.HasRecruits;
+                    });
+
+                    if (settlement != null)
+                    {
+                        strat = new TextObject("If you're looking for a settlement with some troops to recruit you can probably find some in {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlement.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Unfortunately you're out of luck. I don't know of any settlements nearby that have troops for you to recruit.", null);
+                    }
+                    break;
+                case "Interview NPC":
+                    strat = new TextObject("If you're looking for {HERO}, you can probably find him near {SETTLEMENT}.", null);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
+                    strat.SetTextVariable("SETTLEMENT", heroTarget.LastSeenPlace.Name);
+
+                    break;
+            }
+            return strat.ToString();
+        }
+
+
     }
 }
