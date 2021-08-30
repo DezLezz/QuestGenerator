@@ -30,6 +30,9 @@ namespace ThePlotLords
         [SaveableField(120)]
         public static bool initial_quests_created = false;
 
+        [SaveableField(121)]
+        public static int quests_created;
+
         private string path = @"..\..\Modules\ThePlotLords\MissionList.xml";
 
         public static Generator QuestGen = new Generator(0);
@@ -84,8 +87,85 @@ namespace ThePlotLords
                 JsonSerialization.WriteToJsonFile<PlayerData>(playerData, player_data);
             }
 
+        }
+
+        public override void RegisterEvents()
+        {
+            CampaignEvents.OnCheckForIssueEvent.AddNonSerializedListener(this, new Action<Hero>(this.OnCheckForIssue));
+            //CampaignEvents.HourlyTickEvent.AddNonSerializedListener(this, new System.Action(this.HourlyTick));
+            CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, new System.Action(dailyTickEvent));
+        }
+        
+        public void dailyTickEvent()
+        {
+            if (quests_created < 25)
+            {
+                int r = rnd.Next(0, Settlement.All.Count);
+
+                if (Settlement.All[r] != null)
+                {
+                    if (Settlement.All[r].Notables != null)
+                    {
+                        var notables = Settlement.All[r].Notables;
+
+                        int r2 = rnd.Next(0, notables.Count);
+
+                        if (notables[r2] != null)
+                        {
+                            if (notables[r2].CanHaveQuestsOrIssues() && this.ConditionsHold(notables[r2]))
+                            {
+                                PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+                                Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, notables[r2]);
+                                quests_created++;
+
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+
+        public void TickCampaignBehavior()
+        {
+            if (Input.IsKeyDown(InputKey.LeftControl))
+            {
+                if (Input.IsKeyReleased(InputKey.T))
+                {
+                    foreach (IssueBase i in Campaign.Current.IssueManager.Issues.Values)
+                    {
+                        if (i.GetType().Namespace.Contains("ThePlotLords"))
+                        {
+                            if (i.IssueOwner != null)
+                            {
+                                if (i.IssueOwner.CurrentSettlement != null)
+                                {
+                                    InformationManager.DisplayMessage(new InformationMessage("PL quest: " + i.IssueOwner.Name.ToString() +  " in " + i.IssueOwner.CurrentSettlement.ToString()));
+                                }
+                                else
+                                {
+                                    InformationManager.DisplayMessage(new InformationMessage("PL quest: " + i.IssueOwner.Name.ToString()));
+                                }
+                            }
+                        }
+                    }
+                    
+                }
+            }
+        }
+
+
+        private void OnCheckForIssue(Hero hero)
+        {
+
+            if (HeroMotivations.Count == 0)
+            {
+                QuestHelperClass.MotivationGiver();
+            }
+
             if (!initial_quests_created)
             {
+                int counter = 0;
                 foreach (Settlement s in Settlement.All)
                 {
                     if (s.Culture != null)
@@ -100,56 +180,24 @@ namespace ThePlotLords
 
                                     if (this.ConditionsHold(h) && r == 1)
                                     {
-                                        Campaign.Current.IssueManager.AddPotentialIssueData(h, new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common));
+                                        PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+                                        Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, h);
+                                        counter++;
+                                        quests_created++;
                                         break;
                                     }
                                 }
                             }
                         }
                     }
+                    if (counter >= 3)
+                    {
+                        break;
+                    }
                 }
                 initial_quests_created = true;
             }
 
-        }
-
-        public override void RegisterEvents()
-        {
-            CampaignEvents.OnCheckForIssueEvent.AddNonSerializedListener(this, new Action<Hero>(this.OnCheckForIssue));
-            //CampaignEvents.HourlyTickEvent.AddNonSerializedListener(this, new System.Action(this.HourlyTick));
-        }
-
-        public void TickCampaignBehaviour()
-        {
-            if (Input.IsKeyDown(InputKey.LeftControl))
-            {
-                if (Input.IsKeyReleased(InputKey.T))
-                {
-                    InformationManager.DisplayMessage(new InformationMessage("TEST"));
-                }
-            }
-        }
-
-        //private void HourlyTick()
-        //{
-        //    if (Input.IsKeyDown(InputKey.G))
-        //    {
-        //        QuestGen.GenerateOne();
-        //    }
-        //}
-
-        private void OnCheckForIssue(Hero hero)
-        {
-
-            if (HeroMotivations.Count == 0)
-            {
-                QuestHelperClass.MotivationGiver();
-            }
-
-            if (this.ConditionsHold(hero))
-            {
-                Campaign.Current.IssueManager.AddPotentialIssueData(hero, new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common));
-            }
         }
 
         public IssueBase OnIssueSelected(in PotentialIssueData pid, Hero issueOwner)
@@ -312,10 +360,18 @@ namespace ThePlotLords
                 missionHero = issueOwner;
                 actionsInOrder = new List<actionTarget>();
 
-                string place = "";
-                if (issueOwner.LastSeenPlace != null) place = issueOwner.LastSeenPlace.Name.ToString();
-                InformationManager.DisplayMessage(new InformationMessage("Plot Lords quest added in: " + place));
-
+                if (issueOwner != null)
+                {
+                    if (issueOwner.CurrentSettlement != null)
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage("Plot Lords quest added: " + issueOwner.Name.ToString() + " in " + issueOwner.CurrentSettlement.ToString()));
+                    }
+                    else
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage("Plot Lords quest added: " + issueOwner.Name.ToString()));
+                    }
+                }
+                quests_created++;
                 if (chosenMission.nodeType == CustomBTType.motivation)
                 {
                     this.chosenMission = chosenMission;
@@ -355,7 +411,10 @@ namespace ThePlotLords
 
             protected override int RewardGold {
                 get {
-                    return QuestHelperClass.GoldCalculator(actionsInOrder);
+
+                    int extra = MobileParty.MainParty.TotalWage + (int)QuestHelperClass.TimeCalculator(actionsInOrder)/10;
+
+                    return QuestHelperClass.GoldCalculator(actionsInOrder) + extra;
                 }
             }
             public override TextObject Title {
@@ -632,7 +691,7 @@ namespace ThePlotLords
                         textObject += stratObj.ToString();
                     }
 
-                    TextObject t = new TextObject("[PL]" + textObject, null);
+                    TextObject t = new TextObject("[PL] - " + textObject, null);
 
                     return t;
 
@@ -654,52 +713,49 @@ namespace ThePlotLords
             }
             public override TextObject IssueBriefByIssueGiver {
                 get {
-                    TextObject textObject;
+                    string textObject = "";
+                    string motivationC = "";
                     if (chosenMission.nodeType == CustomBTType.motivation)
                     {
-                        textObject = new TextObject(QuestHelperClass.MotivationCalculator(chosenMission.name), null);
+                        motivationC += QuestHelperClass.MotivationCalculator(chosenMission.name);
                     }
                     else
                     {
-                        textObject = new TextObject(QuestHelperClass.MotivationCalculator(chosenMission.Children[0].name), null);
+                        motivationC += QuestHelperClass.MotivationCalculator(chosenMission.Children[0].name);
                     }
 
                     if (chosenMission.subquest_info != "none" && chosenMission.subquest_info != null)
                     {
                         if (chosenMission.subquest_info == "get")
                         {
-                            TextObject get = new TextObject("You're collecting materials for {HERO} right? That rascal has been owning me a favor for a while. Do this task for me and I'll consider it paid. " + textObject.ToString(), null);
+                            TextObject get = new TextObject("You're collecting materials for {HERO} right? That rascal has been owning me a favor for a while. Do this task for me and I'll consider it paid. ", null);
                             get.SetTextVariable("HERO", chosenMission.origin_quest_hero);
-                            return get;
+                            textObject += get.ToString();
                         }
                         else if (chosenMission.subquest_info == "prepare")
                         {
-                            TextObject prepare = new TextObject(QuestHelperClass.MotivationCalculator(chosenMission.name) + textObject.ToString(), null);
-                            prepare.SetTextVariable("HERO", chosenMission.origin_quest_hero);
-                            return prepare;
+                            if (chosenMission.nodeType == CustomBTType.motivation)
+                            {
+                                TextObject prepare = new TextObject(QuestHelperClass.SubquestPrepare(chosenMission.name), null);
+                                prepare.SetTextVariable("HERO", chosenMission.origin_quest_hero);
+                                textObject += prepare.ToString();
+                            }
+                            else
+                            {
+                                TextObject prepare = new TextObject(QuestHelperClass.SubquestPrepare(chosenMission.Children[0].name), null);
+                                prepare.SetTextVariable("HERO", chosenMission.origin_quest_hero);
+                                textObject += prepare.ToString();
+                            }
+                            
                         }
                         else if (chosenMission.subquest_info == "learn")
                         {
-                            TextObject learn = new TextObject("You're looking for information? I could give it to you for free... Or you could do something for me first. " + textObject.ToString(), null);
+                            TextObject learn = new TextObject("You're looking for information? I could give it to you for free... Or you could do something for me first. ", null);
 
-                            return learn;
+                            textObject += learn.ToString();
                         }
                     }
 
-                    return textObject;
-
-                }
-            }
-
-            public override TextObject IssueAcceptByPlayer {
-                get {
-                    return new TextObject("What do I need to do then?", null);
-                }
-            }
-            public override TextObject IssueQuestSolutionExplanationByIssueGiver {
-                get {
-
-                    string textObject = "";
                     string strat = "";
                     if (chosenMission.nodeType == CustomBTType.motivation)
                     {
@@ -963,6 +1019,686 @@ namespace ThePlotLords
                         textObject += stratObj.ToString();
                     }
 
+                    return new TextObject(textObject, null); 
+
+                }
+            }
+
+            public override TextObject IssueAcceptByPlayer {
+                get {
+                    return new TextObject("Alright, anything else you can tell me?", null);
+                }
+            }
+            public override TextObject IssueQuestSolutionExplanationByIssueGiver {
+                get {
+
+                    string textObject = "Yes. The main steps you need to take are: ";
+
+                    string strat = "";
+                    if (chosenMission.nodeType == CustomBTType.motivation)
+                    {
+                        strat = chosenMission.info;
+                    }
+                    else
+                    {
+                        strat = chosenMission.Children[0].info;
+                    }
+                    TextObject stratObj = new TextObject("empty", null);
+                    switch (strat)
+                    {
+                        case "Deliver item for study": //get give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            { 
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Interview NPC": //goto listen report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+
+                            break;
+                        case "Obtain luxuries": //get give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Kill pests": //goto defeat report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Obtain rare items": //get give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Kill enemies": //goto defeat report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Visit dangerous place": //goto report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Revenge, Justice": //goto defeat report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Capture Criminal": //goto capture report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "capture")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Check on NPC": //goto listen report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }                            
+                            break;
+                        case "Recover lost/stolen item": //get give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Rescue NPC": //goto rescue report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "free")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                                
+                            }
+                            break;
+                        case "Attack threatening entities": //goto defeat report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Create Diversion": //goto damage report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Recruit": //goto listen report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "listen")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case "Attack enemy": //goto defeat report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage" || a.action == "kill")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal stuff": //goto steal give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Gather raw materials": //goto get report
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "report")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal valuables for resale": //goto steal give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice combat": //goto damage
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "damage")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Practice skill": //goto use
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "use")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Deliver supplies": //get give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Steal supplies": //steal give
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "give")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                        case "Trade for supplies": //get goto exchange
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "take" || a.action == "gather" || a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "goto" || a.action == "explore")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            foreach (actionTarget a in actionsInOrder)
+                            {
+                                if (a.action == "exchange")
+                                {
+                                    stratObj = a.getStepDescription(strat);
+                                    textObject += stratObj.ToString();
+                                    break;
+                                }
+                            }
+                            break;
+                    }
+
                     textObject += " As a reward, I'll give you ";
 
                     TextObject t = new TextObject(textObject + "{GOLD}{GOLD_ICON}.", null);
@@ -974,7 +1710,7 @@ namespace ThePlotLords
             }
             public override TextObject IssueQuestSolutionAcceptByPlayer {
                 get {
-                    return new TextObject("Then I shall be on my way.", null);
+                    return new TextObject("I shall be on my way then.", null);
                 }
             }
             public override bool IsThereAlternativeSolution {
@@ -1369,7 +2105,7 @@ namespace ThePlotLords
                     }
                     if (alternativeFlag) textObject += " alternative path given by " + actionsInOrder[0].questGiver.Name.ToString();
 
-                    TextObject t = new TextObject("[PL]" + textObject, null);
+                    TextObject t = new TextObject("[PL] - " + textObject, null);
 
                     return t;
                 }

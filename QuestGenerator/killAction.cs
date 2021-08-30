@@ -596,5 +596,23 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+
+            if (heroFlag)
+            {
+                strat = new TextObject("Kill {HERO}.", null);
+                strat.SetTextVariable("HERO", heroTarget.Name);
+            }
+            else
+            {
+                strat = new TextObject("Kill a group of {HERO}.", null);
+                strat.SetTextVariable("HERO", nonHeroTarget);
+            }
+
+            return strat;
+        }
+
     }
 }

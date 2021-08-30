@@ -212,5 +212,14 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            strat = new TextObject("Visit {SETTLEMENT}.", null);
+            strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+
+            return strat;
+        }
+
     }
 }

@@ -61,7 +61,7 @@ namespace ThePlotLords
                             break;
                         }
                     }
-                    int l = rnd.Next(5, 20);
+                    int l = rnd.Next(5, 11);
                     levelAmount = l + currentLevel;
                     TextObject textObject = new TextObject("Go train and level up your {SKILL} by at least {AMOUNT} levels.", null);
                     textObject.SetTextVariable("SKILL", skillName);
@@ -83,7 +83,7 @@ namespace ThePlotLords
                                 break;
                             }
                         }
-                        int l = rnd.Next(5, 20);
+                        int l = rnd.Next(5, 11);
                         levelAmount = l + currentLevel;
                         TextObject textObject = new TextObject("Go train and level up your {SKILL} by at least {AMOUNT} levels.", null);
                         textObject.SetTextVariable("SKILL", skillName);
@@ -210,5 +210,15 @@ namespace ThePlotLords
             }
             return strat.ToString();
         }
+
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            strat = new TextObject("Level up {SKILL} by {AMOUNT} levels.", null);
+            strat.SetTextVariable("SKILL", skillName);
+            strat.SetTextVariable("AMOUNT", levelAmount);
+            return strat;
+        }
+
     }
 }

@@ -916,5 +916,153 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Kill pests":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Damage {HERO}.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Damage a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+
+                    }
+                case "Kill enemies":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Damage {HERO}.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Damage a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+
+                    }
+                case "Revenge, Justice":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Damage {HERO}.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Damage a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+
+                    }
+                case "Attack threatening entities":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Damage {HERO}.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Damage a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+
+                    }
+                case "Create Diversion":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Distract {HERO} by attacking him.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Distract the village of {SETTLEMENT} by attacking it.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Distract the {HERO} by attacking them.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+                    }
+                case "Attack enemy":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Damage {HERO}.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Destroy {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Damage a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+
+                    }
+
+                case "Practice combat":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Fight against {HERO}.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                        break;
+                    }
+                    else if (settlementFlag)
+                    {
+                        strat = new TextObject("Fight against the village {SETTLEMENT}.", null);
+                        strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                        break;
+                    }
+                    else
+                    {
+                        strat = new TextObject("Fight against a group of {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                        break;
+                    }
+            }
+            return strat;
+        }
+
     }
 }

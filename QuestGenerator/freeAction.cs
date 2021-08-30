@@ -91,15 +91,18 @@ namespace ThePlotLords
                                 }
                                 Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
-                                foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
+                                if (targetSet != null)
                                 {
-                                    foreach (Hero h in nonEnemies)
+                                    foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                     {
-                                        if (h.CharacterObject == c)
+                                        foreach (Hero h in nonEnemies)
                                         {
-                                            newHero = h;
-                                            questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
-                                            break;
+                                            if (h.CharacterObject == c)
+                                            {
+                                                newHero = h;
+                                                questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -117,15 +120,18 @@ namespace ThePlotLords
                             {
                                 Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
-                                foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
+                                if (targetSet != null)
                                 {
-                                    foreach (Hero h in nonEnemies)
+                                    foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                     {
-                                        if (h.CharacterObject == c)
+                                        foreach (Hero h in nonEnemies)
                                         {
-                                            newHero = h;
-                                            questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
-                                            break;
+                                            if (h.CharacterObject == c)
+                                            {
+                                                newHero = h;
+                                                questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -156,15 +162,18 @@ namespace ThePlotLords
                                 }
                                 Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
-                                foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
+                                if (targetSet != null)
                                 {
-                                    foreach (Hero h in nonEnemies)
+                                    foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                     {
-                                        if (h.CharacterObject == c)
+                                        foreach (Hero h in nonEnemies)
                                         {
-                                            newHero = h;
-                                            questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
-                                            break;
+                                            if (h.CharacterObject == c)
+                                            {
+                                                newHero = h;
+                                                questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -182,18 +191,22 @@ namespace ThePlotLords
                             {
                                 Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
-                                foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
+                                if (targetSet != null)
                                 {
-                                    foreach (Hero h in nonEnemies)
+                                    foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                                     {
-                                        if (h.CharacterObject == c)
+                                        foreach (Hero h in nonEnemies)
                                         {
-                                            newHero = h;
-                                            questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
-                                            break;
+                                            if (h.CharacterObject == c)
+                                            {
+                                                newHero = h;
+                                                questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
+                                                break;
+                                            }
                                         }
                                     }
                                 }
+                                
 
                                 if (heroTarget == null)
                                 {
@@ -210,25 +223,29 @@ namespace ThePlotLords
                     {
                         Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
-                        foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
+                        if (targetSet != null)
                         {
-                            foreach (Hero h in nonEnemies)
+                            foreach (CharacterObject c in targetSet.Town.GetPrisonerHeroes())
                             {
-                                if (h.CharacterObject == c)
+                                foreach (Hero h in nonEnemies)
                                 {
-                                    newHero = h;
-                                    if (alternative)
+                                    if (h.CharacterObject == c)
                                     {
-                                        questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
+                                        newHero = h;
+                                        if (alternative)
+                                        {
+                                            questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
+                                        }
+                                        else
+                                        {
+                                            questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
+                                        }
+                                        break;
                                     }
-                                    else
-                                    {
-                                        questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
-                                    }
-                                    break;
                                 }
                             }
                         }
+
 
                         if (heroTarget == null)
                         {
@@ -389,6 +406,28 @@ namespace ThePlotLords
                     break;
             }
             return strat.ToString();
+        }
+
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Rescue NPC":
+                    strat = new TextObject("Free {HERO} from the prison in {SETTLEMENT}.", null);
+                    strat.SetTextVariable("HERO", heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+            }
+
+            return strat;
         }
 
     }

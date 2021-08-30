@@ -98,7 +98,7 @@ namespace ThePlotLords
                 }
             }
 
-            if (this.GetItemTarget() == null)
+            if (itemTarget == null)
             {
                 var setName = this.Action.param[1].target;
 
@@ -300,14 +300,17 @@ namespace ThePlotLords
                                 };
                             }
 
-
-                            int amount = 300 / this.GetItemTarget().Value;
-                            if (amount <= 0)
+                            if (itemTarget != null)
                             {
-                                amount = 1;
+                                int amount = 300 / itemTarget.Value;
+                                if (amount <= 0)
+                                {
+                                    amount = 1;
+                                }
+                                itemAmount = amount;
+                                break;
                             }
-                            itemAmount = amount;
-                            break;
+
                         }
                     }
                     if (itemTarget == null)
@@ -841,6 +844,33 @@ namespace ThePlotLords
                     break;
             }
             return strat.ToString();
+        }
+
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            if (heroTarget != null)
+            {
+                strat = new TextObject("Steal {AMOUNT} {ITEM} from {HERO}.", null);
+                strat.SetTextVariable("HERO", heroTarget.Name);
+                strat.SetTextVariable("AMOUNT", itemAmount);
+                strat.SetTextVariable("ITEM", itemTarget.Name);
+            }
+            else if (settlementFlag)
+            {
+                strat = new TextObject("Steal {AMOUNT} {ITEM} from {SETTLEMENT}.", null);
+                strat.SetTextVariable("SETTLEMENT", settlementTarget.Name);
+                strat.SetTextVariable("AMOUNT", itemAmount);
+                strat.SetTextVariable("ITEM", itemTarget.Name);
+            }
+            else
+            {
+                strat = new TextObject("Steal {AMOUNT} {ITEM} from a group of {HERO}.", null);
+                strat.SetTextVariable("HERO", this.Action.param[0].target);
+                strat.SetTextVariable("AMOUNT", itemAmount);
+                strat.SetTextVariable("ITEM", itemTarget.Name);
+            }
+            return strat;
         }
 
     }

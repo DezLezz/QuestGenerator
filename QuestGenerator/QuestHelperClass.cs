@@ -33,14 +33,14 @@ namespace ThePlotLords
             {"Equipment", "I need to replenish my item stock." }};
 
         public static Dictionary<string, string> subquest_Prepare = new Dictionary<string, string>() {
-            {"Knowledge", "You should learn a thing or two before continuing your task. I'll help you out with it, because... " },
+            {"Knowledge", "You should learn a thing or two before continuing your task. I'll help you out with it, since I own one to {HERO}. " },
             {"Comfort", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
             {"Reputation", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
             {"Serenity", "I know you're busy with your mission, but I really need your help with a few dangerous subjects. " },
             {"Protection", "I know you're busy with your mission, but I really need your help with a few dangerous subjects. " },
             {"Conquest", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
             {"Wealth", "I've helped out {HERO} before, but he hasn't paid me back, so I'm going to borrow you for a bit. " },
-            {"Ability", "{HERO} has given you a task right? Hmm... But you don't look ready for it yet. I've got just the task to help you prepare for it though. " },
+            {"Ability", "{HERO} has given you a task right? Hmm... But you don't look ready for it yet. I own one to {HERO} so let me help you prepare for it. " },
             {"Equipment", "{HERO} borrowed a few items from me before, but he hasn't given them back, so you're going to get some new ones for me. " }};
 
         public static Dictionary<string, string> descriptionChoser = new Dictionary<string, string>() {
@@ -347,7 +347,7 @@ namespace ThePlotLords
 
         public static void MotivationGiver()
         {
-            List<string> motivations = new List<string>() { "Knowledge", "Comfort", "Reputation", "Serenity", "Protection", "Conquest", "Wealth", "Ability", "Equipment" };
+            
             var heroList = Hero.AllAliveHeroes;
 
             foreach (Hero h in heroList)
@@ -382,7 +382,7 @@ namespace ThePlotLords
                     //                    break;
                     //                }
                     //            }
-                                
+
                     //        }
                     //    }
 
@@ -431,6 +431,15 @@ namespace ThePlotLords
 
                     //QuestHelperClass qc = new QuestHelperClass();
                     //int choice = qc.weightedChoice(weights);
+                    List<string> motivations = new List<string>() { "Knowledge", "Comfort", "Reputation", "Serenity", "Protection", "Conquest", "Wealth", "Ability", "Equipment" };
+
+                    if (h.IsRuralNotable)
+                    {
+                        motivations.Remove("Reputation");
+                        motivations.Remove("Ability");
+                        motivations.Remove("Comfort");
+                    }
+
                     int r = rnd.Next(motivations.Count);
                     QuestGenTestCampaignBehavior.HeroMotivations.Add(h, motivations[r]);
                 }
@@ -518,6 +527,14 @@ namespace ThePlotLords
             //}
             //QuestHelperClass qc = new QuestHelperClass();
             //int choice = qc.weightedChoice(weights);
+
+            if (h.IsRuralNotable)
+            {
+                motivations.Remove("Reputation");
+                motivations.Remove("Ability");
+                motivations.Remove("Comfort");
+            }
+
             int r = rnd.Next(motivations.Count);
             QuestGenTestCampaignBehavior.HeroMotivations[h] = motivations[r];
 

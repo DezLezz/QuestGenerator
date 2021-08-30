@@ -540,5 +540,24 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            strat = new TextObject("Give {AMOUNT} {ITEM} to {HERO} from {SETTLEMENT.", null);
+            strat.SetTextVariable("AMOUNT", itemAmount);
+            strat.SetTextVariable("ITEM", itemTarget.Name);
+            strat.SetTextVariable("HERO", heroTarget.Name);
+            if (this.heroTarget.CurrentSettlement != null)
+            {
+                strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+            }
+            else
+            {
+                strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+            }
+
+            return strat;
+        }
+
     }
 }

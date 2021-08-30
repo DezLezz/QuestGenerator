@@ -177,7 +177,12 @@ namespace ThePlotLords
 
         }
 
-        public virtual TextObject getDescription(string strategy, int pair)
+        public virtual TextObject getDescription(string strategy, int pair) 
+        {
+            return new TextObject();
+        }
+
+        public virtual TextObject getStepDescription(string strategy) 
         {
             return new TextObject();
         }

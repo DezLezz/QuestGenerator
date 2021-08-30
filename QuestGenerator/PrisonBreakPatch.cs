@@ -10,7 +10,6 @@ namespace ThePlotLords
         private static void Prefix()
         {
             CampaignEventDispatcher.Instance.OnPrisonersChangeInSettlement(null, null, null, true);
-
         }
     }
 }

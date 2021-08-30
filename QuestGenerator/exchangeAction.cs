@@ -695,5 +695,113 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Deliver item for study":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+                case "Obtain luxuries":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+                case "Obtain rare items":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+                case "Recover lost/stolen item":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+                case "Gather raw materials":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+                case "Deliver supplies":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+                case "Trade for supplies":
+                    strat = new TextObject("Exchange {ITEM} for {ITEM2} with {HERO} from {SETTLEMENT}.", null);
+                    strat.SetTextVariable("ITEM", itemTargetReceive.Name);
+                    strat.SetTextVariable("ITEM2", itemTargetGive.Name);
+                    strat.SetTextVariable("HERO", this.heroTarget.Name);
+                    if (this.heroTarget.CurrentSettlement != null)
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                    }
+                    else
+                    {
+                        strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                    }
+                    break;
+
+            }
+            return strat;
+        }
+
     }
 }

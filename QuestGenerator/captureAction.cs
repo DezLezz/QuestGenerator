@@ -442,7 +442,7 @@ namespace ThePlotLords
                     }
                     else
                     {
-                        strat = new TextObject("I need you to capture someone from {HERO}. I need help bringing them to justice.", null);
+                        strat = new TextObject("I need you to capture someone from the {HERO}. I need help bringing them to justice.", null);
                         strat.SetTextVariable("HERO", nonHeroTarget);
                     }
 
@@ -464,7 +464,7 @@ namespace ThePlotLords
                     }
                     else
                     {
-                        strat = new TextObject("Capture a {HERO}", null);
+                        strat = new TextObject("Capture capture someone from the {HERO}", null);
                         strat.SetTextVariable("HERO", nonHeroTarget);
                     }
 
@@ -495,6 +495,29 @@ namespace ThePlotLords
             }
             return strat.ToString();
         }
+
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            switch (strategy)
+            {
+                case "Capture Criminal":
+                    if (heroFlag)
+                    {
+                        strat = new TextObject("Capture {HERO}. I need help bringing him to justice.", null);
+                        strat.SetTextVariable("HERO", heroTarget.Name);
+                    }
+                    else
+                    {
+                        strat = new TextObject("Capture someone from the {HERO}.", null);
+                        strat.SetTextVariable("HERO", nonHeroTarget);
+                    }
+
+                    break;
+            }
+            return strat;
+        }
+
 
     }
 }

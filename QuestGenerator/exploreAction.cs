@@ -333,5 +333,21 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            List<Settlement> tempList = new List<Settlement>();
+            foreach (Settlement s in settlementsToVisit.Keys)
+            {
+                tempList.Add(s);
+            }
+            strat = new TextObject("Visit {SETTLEMENT1}, {SETTLEMENT2} and {SETTLEMENT3}.", null);
+            strat.SetTextVariable("SETTLEMENT1", tempList[0].Name);
+            strat.SetTextVariable("SETTLEMENT2", tempList[1].Name);
+            strat.SetTextVariable("SETTLEMENT3", tempList[2].Name);
+
+            return strat;
+        }
+
     }
 }

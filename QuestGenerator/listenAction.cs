@@ -187,8 +187,16 @@ namespace ThePlotLords
                     {
                         actionInLog = true;
                         questBase.AddTrackedObject(heroTarget);
-                        TextObject textObject = new TextObject("{HERO} might have the information you need, listen to what he has to say.", null);
+                        TextObject textObject = new TextObject("{HERO} from {SETTLEMENT} might have the information you need, listen to what he has to say.", null);
                         textObject.SetTextVariable("HERO", heroTarget.Name);
+                        if (this.heroTarget.CurrentSettlement != null)
+                        {
+                            textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                        }
+                        else
+                        {
+                            textObject.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                        }
                         questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
                         InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                         Campaign.Current.ConversationManager.AddDialogFlow(this.GetListenActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
@@ -203,8 +211,16 @@ namespace ThePlotLords
                         {
                             actionInLog = true;
                             questBase.AddTrackedObject(heroTarget);
-                            TextObject textObject = new TextObject("{HERO} might have the information you need, listen to what he has to say.", null);
+                            TextObject textObject = new TextObject("{HERO} from {SETTLEMENT} might have the information you need, listen to what he has to say.", null);
                             textObject.SetTextVariable("HERO", heroTarget.Name);
+                            if (this.heroTarget.CurrentSettlement != null)
+                            {
+                                textObject.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+                            }
+                            else
+                            {
+                                textObject.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+                            }
                             questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
                             InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                             Campaign.Current.ConversationManager.AddDialogFlow(this.GetListenActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
@@ -677,6 +693,21 @@ namespace ThePlotLords
             return strat.ToString();
         }
 
+        public override TextObject getStepDescription(string strategy)
+        {
+            TextObject strat = new TextObject("empty", null);
+            strat = new TextObject("Listen to what {HERO} from {SETTLEMENT} has to say.", null);
+            strat.SetTextVariable("HERO", heroTarget.Name);
+            if (this.heroTarget.CurrentSettlement != null)
+            {
+                strat.SetTextVariable("SETTLEMENT", this.heroTarget.CurrentSettlement.Name);
+            }
+            else
+            {
+                strat.SetTextVariable("SETTLEMENT", this.heroTarget.LastSeenPlace.Name);
+            }
+            return strat;
+        }
 
     }
 }

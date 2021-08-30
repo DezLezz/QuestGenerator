@@ -11,17 +11,29 @@ using ThePlotLords.QuestBuilder;
 namespace ThePlotLords
 {
     public class SubModule : MBSubModuleBase
-    {        
+    {
+
+        public QuestGenTestCampaignBehavior QuestGenTest;
+
         protected override void OnGameStart(Game game, IGameStarter gameStarter)
         {
 
             bool campaign = game.GameType is Campaign;
                         
+            if (!Directory.Exists(@"..\..\Modules\ThePlotLords\PlayerData\"))
+            {
+                Directory.CreateDirectory(@"..\..\Modules\ThePlotLords\PlayerData\");
+            }
+
+            if (!Directory.Exists(@"..\..\Modules\ThePlotLords\SaveFiles\"))
+            {
+                Directory.CreateDirectory(@"..\..\Modules\ThePlotLords\SaveFiles\");
+            }
 
             if (campaign)
             {
                 CampaignGameStarter campaignStarter = (CampaignGameStarter)gameStarter;
-                campaignStarter.AddBehavior(new QuestGenTestCampaignBehavior());
+                campaignStarter.AddBehavior(QuestGenTest = new QuestGenTestCampaignBehavior());
             }
 
 
@@ -45,6 +57,13 @@ namespace ThePlotLords
             }, () => reason));
         }
 
-
+        protected override void OnApplicationTick(float dt)
+        {
+            base.OnApplicationTick(dt);
+            if (this.QuestGenTest != null)
+            {
+                this.QuestGenTest.TickCampaignBehavior();
+            }
+        }
     }
 }

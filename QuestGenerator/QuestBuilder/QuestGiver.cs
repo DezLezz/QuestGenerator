@@ -264,6 +264,18 @@ namespace ThePlotLords.QuestBuilder
                             }
                         }
                     }
+
+                    if (n.action.name == "<get>" && n.parentNode != null)
+                    {
+                        if (n.parentNode.action != null)
+                        {
+                            if (n.parentNode.action.name == "<get>")
+                            {
+                                n.action.param[0].flag = 0;
+                            }
+                        }
+                    }
+
                     foreach (Parameter param1 in n.action.param)
                     {
                         if (param1.flag == 0)
