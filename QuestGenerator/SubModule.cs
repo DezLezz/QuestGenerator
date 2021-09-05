@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
+using TaleWorlds.InputSystem;
 using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.SaveSystem;
@@ -63,6 +64,13 @@ namespace ThePlotLords
             if (this.QuestGenTest != null)
             {
                 this.QuestGenTest.TickCampaignBehavior();
+                if (Input.IsKeyDown(InputKey.LeftControl))
+                {
+                    if (Input.IsKeyReleased(InputKey.K))
+                    {
+                        RemoveQuests.UnnistalQuests();
+                    }
+                }
             }
         }
     }

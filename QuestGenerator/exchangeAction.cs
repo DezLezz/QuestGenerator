@@ -63,11 +63,11 @@ namespace ThePlotLords
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
-                if (array.Length > 1 || array.Length == 0)
+                if (array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 78"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - 74"));
                 }
-                if (array.Length == 1)
+                if (array.Length >= 1)
                 {
                     itemTargetReceive = array[0];
                 }
@@ -79,11 +79,11 @@ namespace ThePlotLords
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
-                if (array.Length > 1 || array.Length == 0)
+                if (array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("exchange action - line 94"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - 74"));
                 }
-                if (array.Length == 1)
+                if (array.Length >= 1)
                 {
                     itemTargetGive = array[0];
                 }

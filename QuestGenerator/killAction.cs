@@ -166,9 +166,16 @@ namespace ThePlotLords
                                 heroFlag = true;
                                 int e = rnd.Next(mobileEnemies.Count);
                                 newHero = mobileEnemies[e];
-                                questGen.alternativeActionsInOrder[i - 1].SetSettlementTarget(newHero.CurrentSettlement);
-                                questGen.alternativeActionsInOrder[i - 1].Action.param[0].target = newHero.CurrentSettlement.Name.ToString();
-
+                                if (newHero.CurrentSettlement != null)
+                                {
+                                    questGen.alternativeActionsInOrder[i - 1].SetSettlementTarget(newHero.CurrentSettlement);
+                                    questGen.alternativeActionsInOrder[i - 1].Action.param[0].target = newHero.CurrentSettlement.Name.ToString();
+                                }
+                                else
+                                {
+                                    questGen.alternativeActionsInOrder[i - 1].SetSettlementTarget(newHero.LastSeenPlace);
+                                    questGen.alternativeActionsInOrder[i - 1].Action.param[0].target = newHero.LastSeenPlace.Name.ToString();
+                                }
                                 questGen.alternativeMission.updateHeroTargets(npcNumb, newHero);
 
                             }
@@ -189,8 +196,16 @@ namespace ThePlotLords
                                 heroFlag = true;
                                 int e = rnd.Next(mobileEnemies.Count);
                                 newHero = mobileEnemies[e];
-                                questGen.actionsInOrder[i - 1].SetSettlementTarget(newHero.CurrentSettlement);
-                                questGen.actionsInOrder[i - 1].Action.param[0].target = newHero.CurrentSettlement.Name.ToString();
+                                if (newHero.CurrentSettlement != null)
+                                {
+                                    questGen.actionsInOrder[i - 1].SetSettlementTarget(newHero.CurrentSettlement);
+                                    questGen.actionsInOrder[i - 1].Action.param[0].target = newHero.CurrentSettlement.Name.ToString();
+                                }
+                                else
+                                {
+                                    questGen.actionsInOrder[i - 1].SetSettlementTarget(newHero.LastSeenPlace);
+                                    questGen.actionsInOrder[i - 1].Action.param[0].target = newHero.LastSeenPlace.Name.ToString();
+                                }
 
                                 questGen.chosenMission.updateHeroTargets(npcNumb, newHero);
 
@@ -311,7 +326,7 @@ namespace ThePlotLords
             if (!actioncomplete)
             {
 
-                if (index < questGen.actionsInOrder.Count)
+                if (index < questGen.actionsInOrder.Count - 1)
                 {
                     if ((questGen.actionsInOrder[index + 1].action == "take" || questGen.actionsInOrder[index + 1].action == "capture"))
                     {

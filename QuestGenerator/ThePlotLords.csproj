@@ -127,6 +127,7 @@
     <Compile Include="QuestBuilder\Rules.cs" />
     <Compile Include="QuestBuilder\Strategy.cs" />
     <Compile Include="QuestHelperClass.cs" />
+    <Compile Include="RemoveQuests.cs" />
     <Compile Include="takeAction.cs" />
     <Compile Include="useAction.cs" />
     <Compile Include="XmlSerialization.cs" />

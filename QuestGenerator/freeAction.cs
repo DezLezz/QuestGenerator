@@ -106,7 +106,15 @@ namespace ThePlotLords
                                         }
                                     }
                                 }
+                                else
+                                {
+                                    targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction != questGiver.MapFaction);
+                                }
 
+                                if (targetSet == null)
+                                {
+                                    targetSet = SettlementHelper.FindRandomSettlement((Settlement x) => x.IsTown);
+                                }
                                 if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
@@ -135,7 +143,15 @@ namespace ThePlotLords
                                         }
                                     }
                                 }
+                                else
+                                {
+                                    targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction != questGiver.MapFaction);
+                                }
 
+                                if (targetSet == null)
+                                {
+                                    targetSet = SettlementHelper.FindRandomSettlement((Settlement x) => x.IsTown);
+                                }
                                 if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
@@ -177,7 +193,15 @@ namespace ThePlotLords
                                         }
                                     }
                                 }
+                                else
+                                {
+                                    targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction != questGiver.MapFaction);
+                                }
 
+                                if (targetSet == null)
+                                {
+                                    targetSet = SettlementHelper.FindRandomSettlement((Settlement x) => x.IsTown);
+                                }
                                 if (heroTarget == null)
                                 {
                                     int r = rnd.Next(nonEnemies.Count());
@@ -206,7 +230,15 @@ namespace ThePlotLords
                                         }
                                     }
                                 }
-                                
+                                else
+                                {
+                                    targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction != questGiver.MapFaction);
+                                }
+
+                                if (targetSet == null)
+                                {
+                                    targetSet = SettlementHelper.FindRandomSettlement((Settlement x) => x.IsTown);
+                                }
 
                                 if (heroTarget == null)
                                 {
@@ -245,6 +277,15 @@ namespace ThePlotLords
                                 }
                             }
                         }
+                        else
+                        {
+                            targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction != questGiver.MapFaction);
+                        }
+
+                        if (targetSet == null)
+                        {
+                            targetSet = SettlementHelper.FindRandomSettlement((Settlement x) => x.IsTown);
+                        }
 
 
                         if (heroTarget == null)
@@ -271,6 +312,15 @@ namespace ThePlotLords
                 if (!heroTarget.IsPrisoner)
                 {
                     Settlement targetSet = SettlementHelper.FindNearestSettlement((Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(heroTarget.MapFaction));
+                    if (targetSet == null)
+                    {
+                        targetSet = SettlementHelper.FindNearestSettlementToPoint(questGiver.CurrentSettlement.Position2D, (Settlement x) => x.IsTown && x.MapFaction != questGiver.MapFaction);
+                    }
+
+                    if (targetSet == null)
+                    {
+                        targetSet = SettlementHelper.FindRandomSettlement((Settlement x) => x.IsTown);
+                    }
                     TakePrisonerAction.Apply(targetSet.Party, heroTarget);
                 }
             }

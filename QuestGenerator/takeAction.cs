@@ -104,11 +104,11 @@ namespace ThePlotLords
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
-                if (array.Length > 1 || array.Length == 0)
+                if (array.Length == 0)
                 {
-                    //InformationManager.DisplayMessage(new InformationMessage("take action - line 106"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - 74"));
                 }
-                if (array.Length == 1)
+                if (array.Length >= 1)
                 {
                     itemTarget = array[0];
                 }
@@ -279,36 +279,40 @@ namespace ThePlotLords
                             //        break;
                             //    }
                             //}
-                            int it = rnd.Next(itemsForEachCulture[m.ActualClan.Culture.Name.ToString()].Count);
-                            var setName = itemsForEachCulture[m.ActualClan.Culture.Name.ToString()][it];
 
-                            ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
+                            if (itemsForEachCulture.ContainsKey(m.ActualClan.Culture.Name.ToString()))
+                            {
+                                int it = rnd.Next(itemsForEachCulture[m.ActualClan.Culture.Name.ToString()].Count);
+                                var setName = itemsForEachCulture[m.ActualClan.Culture.Name.ToString()][it];
 
-                            if (array.Length > 1 || array.Length == 0)
-                            {
-                                InformationManager.DisplayMessage(new InformationMessage("take action - line 106"));
-                            }
-                            if (array.Length == 1)
-                            {
-                                if (alternative)
+                                ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
+
+                                if (array.Length == 0)
                                 {
-                                    questGen.alternativeMission.updateItemTargets(itemNumb, array[0]);
+                                    InformationManager.DisplayMessage(new InformationMessage("take action - line 106"));
                                 }
-                                else
+                                if (array.Length >= 1)
                                 {
-                                    questGen.chosenMission.updateItemTargets(itemNumb, array[0]);
-                                };
-                            }
-
-                            if (itemTarget != null)
-                            {
-                                int amount = 300 / itemTarget.Value;
-                                if (amount <= 0)
-                                {
-                                    amount = 1;
+                                    if (alternative)
+                                    {
+                                        questGen.alternativeMission.updateItemTargets(itemNumb, array[0]);
+                                    }
+                                    else
+                                    {
+                                        questGen.chosenMission.updateItemTargets(itemNumb, array[0]);
+                                    };
                                 }
-                                itemAmount = amount;
-                                break;
+
+                                if (itemTarget != null)
+                                {
+                                    int amount = 300 / itemTarget.Value;
+                                    if (amount <= 0)
+                                    {
+                                        amount = 1;
+                                    }
+                                    itemAmount = amount;
+                                    break;
+                                }
                             }
 
                         }
@@ -319,11 +323,11 @@ namespace ThePlotLords
 
                         ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
-                        if (array.Length > 1 || array.Length == 0)
+                        if (array.Length == 0)
                         {
                             InformationManager.DisplayMessage(new InformationMessage("take action - line 106"));
                         }
-                        if (array.Length == 1)
+                        if (array.Length >= 1)
                         {
                             if (alternative)
                             {

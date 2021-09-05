@@ -366,7 +366,7 @@ namespace ThePlotLords
                         }
                     }
                 }
-                
+
                 else
                 {
                     questGen.currentActionIndex++;

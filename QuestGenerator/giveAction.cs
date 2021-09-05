@@ -75,11 +75,11 @@ namespace ThePlotLords
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
-                if (array.Length > 1 || array.Length == 0)
+                if (array.Length == 0)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("give action - line 89"));
+                    InformationManager.DisplayMessage(new InformationMessage("gather action - 74"));
                 }
-                if (array.Length == 1)
+                if (array.Length >= 1)
                 {
                     itemTarget = array[0];
                 }
@@ -296,10 +296,8 @@ namespace ThePlotLords
             TextObject npcLine1 = new TextObject("Have you brought {ITEM_AMOUNT} of {ITEM_NAME}?", null);
             npcLine1.SetTextVariable("ITEM_AMOUNT", itemAmount);
             npcLine1.SetTextVariable("ITEM_NAME", itemTarget.Name);
-            TextObject textObject = new TextObject("Thank you, {?PLAYER.GENDER}milady{?}sir{\\?}! You are a saint.", null);
-            TextObject textObject2 = new TextObject("We await your success, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
-            textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
-            textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
+            TextObject textObject = new TextObject("Thank you! You are a saint.", null);
+            TextObject textObject2 = new TextObject("We await your success.", null);
 
             return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here is what you asked for.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
             {

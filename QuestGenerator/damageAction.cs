@@ -419,7 +419,7 @@ namespace ThePlotLords
         {
             if (!actioncomplete)
             {
-                if (index < questGen.actionsInOrder.Count)
+                if (index < questGen.actionsInOrder.Count - 1)
                 {
                     if ((questGen.actionsInOrder[index + 1].action == "take" || questGen.actionsInOrder[index + 1].action == "capture"))
                     {
