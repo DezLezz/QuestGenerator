@@ -18,6 +18,8 @@ namespace ThePlotLords
         public int levelAmount = 0;
 
         public int currentLevel = 0;
+
+        public bool skipQuest;
         public useAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
@@ -35,10 +37,32 @@ namespace ThePlotLords
 
         public override void IssueQ(IssueBase questBase, QuestGenTestCampaignBehavior.QuestGenTestIssue questGen, bool alternative)
         {
+            skipQuest = false;
             if (this.Action.param[0].target.Contains("item"))
             {
+
                 MBReadOnlyList<SkillObject> skills = Skills.All;
+
+                int max = 100;
+
                 int r = rnd.Next(skills.Count);
+
+                int l = Hero.MainHero.GetSkillValue(skills[r]);
+
+                if (l + 10 > 299)
+                {
+                    while (max > 0 && l + 10 > 299)
+                    {
+                        r = rnd.Next(skills.Count);
+                        l = Hero.MainHero.GetSkillValue(skills[r]);
+                        max--;
+                    }
+                }
+
+                if (max == 0)
+                {
+                    skipQuest = true;
+                }
 
                 skillName = skills[r].Name.ToString();
                 //this.skillName = "Athletics";
@@ -49,6 +73,10 @@ namespace ThePlotLords
 
         public override void QuestQ(QuestBase questBase, QuestGenTestCampaignBehavior.QuestGenTestQuest questGen)
         {
+            if (skipQuest)
+            {
+                this.useConsequences(this.index, questBase, questGen);
+            }
             if (!actioncomplete && !actionInLog)
             {
                 if (index == 0)

@@ -18,9 +18,8 @@ namespace ThePlotLords
 
         protected override void OnGameStart(Game game, IGameStarter gameStarter)
         {
-
             bool campaign = game.GameType is Campaign;
-                        
+
             if (!Directory.Exists(@"..\..\Modules\ThePlotLords\PlayerData\"))
             {
                 Directory.CreateDirectory(@"..\..\Modules\ThePlotLords\PlayerData\");
@@ -47,7 +46,7 @@ namespace ThePlotLords
             ValueTuple<bool, TextObject> reason = new ValueTuple<bool, TextObject>(false, new TextObject());
             //Module.CurrentModule.AddInitialStateOption(new InitialStateOption("GenerateOneQuest", new TextObject("Generate one quest (debug purposes)", null), 9990, () => {
             //    var gen = new Generator(0);
-            //    gen.GenerateOne();
+            //    gen.GenerateOneDebug();
             //    InformationManager.DisplayMessage(new InformationMessage("Quest Generated"));
             //}, () => reason));
 
@@ -64,6 +63,7 @@ namespace ThePlotLords
             if (this.QuestGenTest != null)
             {
                 this.QuestGenTest.TickCampaignBehavior();
+
                 if (Input.IsKeyDown(InputKey.LeftControl))
                 {
                     if (Input.IsKeyReleased(InputKey.K))
@@ -71,6 +71,7 @@ namespace ThePlotLords
                         RemoveQuests.UnnistalQuests();
                     }
                 }
+
             }
         }
     }

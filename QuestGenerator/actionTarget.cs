@@ -31,7 +31,7 @@ namespace ThePlotLords
         public bool actioncomplete = false;
 
         public bool actionInLog = false;
-
+        
         public ThePlotLords.QuestBuilder.Action Action { get; set; }
 
         public actionTarget(string action, ThePlotLords.QuestBuilder.Action action1)

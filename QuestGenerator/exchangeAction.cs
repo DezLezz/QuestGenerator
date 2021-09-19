@@ -26,9 +26,9 @@ namespace ThePlotLords
         [XmlIgnore]
         public ItemObject itemTargetReceive;
 
-        public int itemAmountGive = 0;
+        public int itemAmountGive;
 
-        public int itemAmountReceive = 0;
+        public int itemAmountReceive;
 
         public exchangeAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
@@ -59,7 +59,7 @@ namespace ThePlotLords
 
             if (itemTargetReceive == null)
             {
-                var setName = this.Action.param[1].target;
+                var setName = this.Action.param[2].target;
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
@@ -75,7 +75,7 @@ namespace ThePlotLords
 
             if (itemTargetGive == null)
             {
-                var setName = this.Action.param[2].target;
+                var setName = this.Action.param[1].target;
 
                 ItemObject[] array = (from x in Items.All where (x.Name.ToString() == setName) select x).ToArray<ItemObject>();
 
@@ -273,7 +273,7 @@ namespace ThePlotLords
 
             }
 
-            else if ((itemTargetGive != null && itemAmountGive == 0) && (itemTargetReceive != null && itemAmountReceive == 0))
+            else if ((itemTargetGive != null && itemAmountGive == 0) || (itemTargetReceive != null && itemAmountReceive == 0))
             {
                 if (itemAmountGive == 0)
                 {
@@ -359,12 +359,10 @@ namespace ThePlotLords
             npcLine1.SetTextVariable("ITEM_NAME1", itemTargetGive.Name);
             npcLine1.SetTextVariable("ITEM_AMOUNT2", itemAmountReceive);
             npcLine1.SetTextVariable("ITEM_NAME2", itemTargetReceive.Name);
-            TextObject textObject = new TextObject("Pleasure doing business with you {?PLAYER.GENDER}milady{?}sir{\\?}, safe travels.", null);
-            TextObject textObject2 = new TextObject("We await your return, {?PLAYER.GENDER}milady{?}sir{\\?}.", null);
-            textObject.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
-            textObject2.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
+            TextObject textObject = new TextObject("Pleasure doing business with you, safe travels.", null);
+            TextObject textObject2 = new TextObject("We await your return.", null);
 
-            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here you go.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditionsExchange)).NpcLine(textObject, null, null).Consequence(delegate
+            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here you go.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(this.ReturnItemClickableConditionsExchange)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.exchangeConsequences(index, questBase, questGen);
             }).CloseDialog().PlayerOption(new TextObject("I'm working on it.", null), null).NpcLine(textObject2, null, null).CloseDialog().EndPlayerOptions().CloseDialog();
@@ -390,6 +388,19 @@ namespace ThePlotLords
                     questGen.SuccessConsequences();
                 }
             }
+        }
+
+        public bool ReturnItemClickableConditionsExchange(out TextObject explanation)
+        {
+            int currentItemProgress = PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTargetGive);
+            if (currentItemProgress >= itemAmountGive)
+            {
+                explanation = TextObject.Empty;
+                return true;
+            }
+
+            explanation = new TextObject("You don't have enough of that item.", null);
+            return false;
         }
 
         //public override void OnPlayerInventoryExchangeQuest(List<(ItemRosterElement, int)> purchasedItems, List<(ItemRosterElement, int)> soldItems, bool isTrading, int index, QuestGenTestQuest questGen, QuestBase questBase)

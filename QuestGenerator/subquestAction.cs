@@ -232,15 +232,17 @@ namespace ThePlotLords
 
             children[0].origin_quest_hero = questGiver.Name.ToString();
 
-            if (HeroMotivations.ContainsKey(heroTarget))
+            if (heroTarget != null)
             {
-                HeroMotivations[heroTarget] = "WaitingForSubQuest";
+                if (HeroMotivations.ContainsKey(heroTarget))
+                {
+                    HeroMotivations[heroTarget] = "WaitingForSubQuest";
+                }
+                else
+                {
+                    HeroMotivations.Add(heroTarget, "WaitingForSubQuest");
+                }
             }
-            else
-            {
-                HeroMotivations.Add(heroTarget, "WaitingForSubQuest");
-            }
-            
 
         }
 

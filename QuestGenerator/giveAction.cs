@@ -21,7 +21,7 @@ namespace ThePlotLords
         [XmlIgnore]
         public ItemObject itemTarget;
 
-        public int itemAmount = 0;
+        public int itemAmount;
 
         public bool partTwo = false;
         public giveAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
@@ -299,10 +299,25 @@ namespace ThePlotLords
             TextObject textObject = new TextObject("Thank you! You are a saint.", null);
             TextObject textObject2 = new TextObject("We await your success.", null);
 
-            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here is what you asked for.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(questGen.ReturnItemClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
+            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Yes. Here is what you asked for.", null), null).ClickableCondition(new ConversationSentence.OnClickableConditionDelegate(this.ReturnItemClickableConditions)).NpcLine(textObject, null, null).Consequence(delegate
             {
                 this.giveConsequences(index, questBase, questGen);
             }).CloseDialog().PlayerOption(new TextObject("I'm working on it.", null), null).NpcLine(textObject2, null, null).CloseDialog().EndPlayerOptions().CloseDialog();
+        }
+
+        public bool ReturnItemClickableConditions(out TextObject explanation)
+        {
+            if (this.itemTarget != null)
+            {
+                if (PartyBase.MainParty.ItemRoster.GetItemNumber(this.itemTarget) >= this.itemAmount)
+                {
+                    explanation = TextObject.Empty;
+                    return true;
+                }
+            }
+
+            explanation = new TextObject("You don't have enough of that item.", null);
+            return false;
         }
 
         private void giveConsequences(int index, QuestBase questBase, QuestGenTestQuest questGen)

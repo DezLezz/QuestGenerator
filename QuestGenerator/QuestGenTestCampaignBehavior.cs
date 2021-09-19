@@ -98,37 +98,39 @@ namespace ThePlotLords
 
         public void dailyTickEvent()
         {
-            if (quests_created < 50)
+            if (quests_created < 150)
             {
-                int r = rnd.Next(Settlement.All.Count);
-
-                if (Settlement.All.Count > 0)
+                for (int i = 0; i < 7; i++)
                 {
-                    if (Settlement.All[r] != null)
+                    int r = rnd.Next(Settlement.All.Count);
+
+                    if (Settlement.All.Count > 0)
                     {
-                        if (Settlement.All[r].Notables != null)
+                        if (Settlement.All[r] != null)
                         {
-                            var notables = Settlement.All[r].Notables;
-
-                            int r2 = rnd.Next(notables.Count);
-
-                            if (notables.Count > 0)
+                            if (Settlement.All[r].Notables != null)
                             {
-                                if (notables[r2] != null)
+                                var notables = Settlement.All[r].Notables;
+
+                                int r2 = rnd.Next(notables.Count);
+
+                                if (notables.Count > 0)
                                 {
-                                    if (notables[r2].CanHaveQuestsOrIssues() && this.ConditionsHold(notables[r2]))
+                                    if (notables[r2] != null)
                                     {
-                                        PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
-                                        Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, notables[r2]);
-                                        quests_created++;
+                                        if (notables[r2].CanHaveQuestsOrIssues() && this.ConditionsHold(notables[r2]))
+                                        {
+                                            PotentialIssueData potentialIssueData = new PotentialIssueData(new PotentialIssueData.StartIssueDelegate(this.OnIssueSelected), typeof(QuestGenTestCampaignBehavior.QuestGenTestIssue), IssueBase.IssueFrequency.Common);
+                                            Campaign.Current.IssueManager.CreateNewIssue(potentialIssueData, notables[r2]);
+                                            quests_created++;
+                                        }
                                     }
                                 }
-                            }
 
+                            }
                         }
                     }
                 }
-
             }
         }
 
@@ -154,6 +156,20 @@ namespace ThePlotLords
                                 }
                             }
                         }
+                        //if (i.GetType().Name.ToString() == "LandlordTrainingForRetainersIssue")
+                        //{
+                        //    if (i.IssueOwner != null)
+                        //    {
+                        //        if (i.IssueOwner.CurrentSettlement != null)
+                        //        {
+                        //            InformationManager.DisplayMessage(new InformationMessage("lord train quest: " + i.IssueOwner.Name.ToString() + " in " + i.IssueOwner.CurrentSettlement.ToString()));
+                        //        }
+                        //        else
+                        //        {
+                        //            InformationManager.DisplayMessage(new InformationMessage("lord train quest: " + i.IssueOwner.Name.ToString()));
+                        //        }
+                        //    }
+                        //}
                     }
 
                 }
@@ -2445,22 +2461,29 @@ namespace ThePlotLords
 
             protected override void OnGameLoad()
             {
-                actionsInOrder = new List<actionTarget>();
                 string path2 = @"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + ".xml";
-                chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
-
-                chosenMission.bringTargetsBack((IssueBase)this, this, false);
-
-                if (File.Exists(@"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml"))
+                if (File.Exists(path2))
                 {
-                    alternativeActionsInOrder = new List<actionTarget>();
-                    string path2_alt = @"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml";
-                    alternativeMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2_alt)[0];
+                    actionsInOrder = new List<actionTarget>();
 
-                    alternativeMission.bringTargetsBack((IssueBase)this, this, true);
+                    chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
+
+                    chosenMission.bringTargetsBack((IssueBase)this, this, false);
+
+                    if (File.Exists(@"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml"))
+                    {
+                        alternativeActionsInOrder = new List<actionTarget>();
+                        string path2_alt = @"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml";
+                        alternativeMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2_alt)[0];
+
+                        alternativeMission.bringTargetsBack((IssueBase)this, this, true);
+                    }
                 }
-
-
+                else
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("[PL] - Some quest files were not found so the quests have been cancelled. If this was not intended please find the quest files and place them on the SaveFiles folder."));
+                    Campaign.Current.IssueManager.DeactivateIssue(this);
+                }
             }
 
         }
@@ -2518,7 +2541,11 @@ namespace ThePlotLords
 
                     string textObject = "";
                     string strat = "";
-                    strat = chosenMission.info;
+                    if (chosenMission != null)
+                    {
+                        strat = chosenMission.info;
+                    }
+                    
                     TextObject stratObj = new TextObject("empty", null);
                     switch (strat)
                     {
@@ -2764,7 +2791,7 @@ namespace ThePlotLords
                             break;
                     }
 
-                    if (stratObj.ToString() == "empty")
+                    if (stratObj.ToString() == "empty" && chosenMission != null)
                     {
                         textObject += chosenMission.info;
                     }
@@ -2830,22 +2857,34 @@ namespace ThePlotLords
             }
             protected override void InitializeQuestOnGameLoad()
             {
+                string id = base.StringId;
+
+                string path2 = @"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + ".xml";
 
                 this.SetDialogs();
-                this.loadActionTargets();
-                currentAction = actionsInOrder[currentActionIndex];
 
-                for (int i = 0; i < actionsInOrder.Count; i++)
+                if (File.Exists(path2))
                 {
-                    var aT = actionsInOrder[i];
+                    this.loadActionTargets();
+                    currentAction = actionsInOrder[currentActionIndex];
 
-                    DialogFlow d = aT.getDialogFlows(i, null, (QuestBase)this, this);
-
-                    if (d != null)
+                    for (int i = 0; i < actionsInOrder.Count; i++)
                     {
-                        Campaign.Current.ConversationManager.AddDialogFlow(d, this);
-                    }
+                        var aT = actionsInOrder[i];
 
+                        DialogFlow d = aT.getDialogFlows(i, null, (QuestBase)this, this);
+
+                        if (d != null)
+                        {
+                            Campaign.Current.ConversationManager.AddDialogFlow(d, this);
+                        }
+
+                    }
+                }
+                else
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("[PL] - Some quest files were not found so the quests have been cancelled. If this was not intended please find the quest files and place them on the SaveFiles folder."));
+                    this.CompleteQuestWithCancel(null);
                 }
 
             }
@@ -2903,6 +2942,7 @@ namespace ThePlotLords
                 chosenMission = XmlSerialization.ReadFromXmlFile<List<CustomBTNode>>(path2)[0];
 
                 chosenMission.bringTargetsBack((QuestBase)this, this);
+                
 
                 //if (File.Exists(@"..\..\Modules\ThePlotLords\SaveFiles\missionSaveFile_" + id + "_alternative" + ".xml") && alternativeFlag == false)
                 //{
@@ -2930,34 +2970,6 @@ namespace ThePlotLords
                 //    }
                 //}
 
-            }
-
-            public bool ReturnItemClickableConditions(out TextObject explanation)
-            {
-                if (actionsInOrder[currentActionIndex].GetItemTarget() != null)
-                {
-                    if (PartyBase.MainParty.ItemRoster.GetItemNumber(actionsInOrder[currentActionIndex].GetItemTarget()) >= actionsInOrder[currentActionIndex].GetItemAmount())
-                    {
-                        explanation = TextObject.Empty;
-                        return true;
-                    }
-                }
-
-                explanation = new TextObject("You don't have enough of that item.", null);
-                return false;
-            }
-
-            public bool ReturnItemClickableConditionsExchange(out TextObject explanation)
-            {
-
-                if (journalLogs[currentActionIndex].CurrentProgress == 0 && journalLogs[currentActionIndex].TaskName == new TextObject("Exhange {ITEM_AMOUNT1} {ITEM_NAME1} for {ITEM_AMOUNT2} {ITEM_NAME2} with {HERO}", null))
-                {
-                    explanation = TextObject.Empty;
-                    return true;
-                }
-
-                explanation = new TextObject("You don't have enough of that item.", null);
-                return false;
             }
 
             public void SuccessConsequences()

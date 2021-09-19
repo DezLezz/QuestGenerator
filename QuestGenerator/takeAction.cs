@@ -169,6 +169,13 @@ namespace ThePlotLords
 
             if (this.Action.param[1].target.Contains("item"))
             {
+                //string path = @"..\..\Modules\ThePlotLords\allItems.txt";
+                //List<string> itemss = new List<string>();
+                //foreach (ItemObject io in Items.All)
+                //{
+                //    itemss.Add(io.Name.ToString());
+                //}
+                //JsonSerialization.WriteToJsonFile<List<string>>(path, itemss);
                 string itemNumb = this.Action.param[1].target;
                 if (heroTarget != null && heroTarget.PartyBelongedTo != null)
                 {
@@ -279,7 +286,6 @@ namespace ThePlotLords
                             //        break;
                             //    }
                             //}
-
                             if (itemsForEachCulture.ContainsKey(m.ActualClan.Culture.Name.ToString()))
                             {
                                 int it = rnd.Next(itemsForEachCulture[m.ActualClan.Culture.Name.ToString()].Count);
@@ -338,12 +344,46 @@ namespace ThePlotLords
                                 questGen.chosenMission.updateItemTargets(itemNumb, array[0]);
                             }
                         }
-                        int amount = 300 / this.GetItemTarget().Value;
-                        if (amount <= 0)
+
+                        if (itemTarget != null)
                         {
-                            amount = 1;
+                            int amount = 300 / this.itemTarget.Value;
+                            if (amount <= 0)
+                            {
+                                amount = 1;
+                            }
+                            itemAmount = amount;
                         }
-                        itemAmount = amount;
+                        else
+                        {
+                            var setName2 = "Commoner Tunic";
+
+                            ItemObject[] array2 = (from x in Items.All where (x.Name.ToString().Replace("\"", "") == setName2) select x).ToArray<ItemObject>();
+
+                            if (array2.Length == 0)
+                            {
+                                InformationManager.DisplayMessage(new InformationMessage("take action - line 106"));
+                            }
+                            if (array2.Length >= 1)
+                            {
+                                if (alternative)
+                                {
+                                    questGen.alternativeMission.updateItemTargets(itemNumb, array2[0]);
+                                }
+                                else
+                                {
+                                    questGen.chosenMission.updateItemTargets(itemNumb, array2[0]);
+                                }
+                            }
+
+                            int amount = 300 / this.itemTarget.Value;
+                            if (amount <= 0)
+                            {
+                                amount = 1;
+                            }
+                            itemAmount = amount;
+                        }
+
                     }
 
                 }

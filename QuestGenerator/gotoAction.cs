@@ -15,6 +15,13 @@ namespace ThePlotLords
         [XmlIgnore]
         public Settlement settlementTarget;
 
+        [XmlIgnore]
+        public Hero heroTarget;
+
+        public bool settlementEntered = false;
+
+        public bool nextIsGotoFlag = false;
+
         public gotoAction(string action, ThePlotLords.QuestBuilder.Action action1) : base(action, action1)
         {
         }
@@ -47,6 +54,13 @@ namespace ThePlotLords
                     settlementTarget = array[0];
                 }
             }
+
+            if (heroTarget == null)
+            {
+                var setName = this.Action.param[0].target;
+
+                heroTarget = Hero.FindFirst((Hero x) => x.Name.ToString() == setName);
+            }
             if (questGiver == null)
             {
                 var setName = questGiverString;
@@ -73,6 +87,28 @@ namespace ThePlotLords
                 else
                 {
                     questGen.chosenMission.updateSettlementTargets(placeNumb, settlement);
+                }
+            }
+
+            if (alternative)
+            {
+
+                if (this.index < questGen.alternativeActionsInOrder.Count - 1)
+                {
+                    if (questGen.alternativeActionsInOrder[this.index + 1].action == "goto" || questGen.alternativeActionsInOrder[this.index + 1].action == "explore")
+                    {
+                        this.nextIsGotoFlag = true;
+                    }
+                }
+            }
+            else
+            {
+                if (this.index < questGen.actionsInOrder.Count - 1)
+                {
+                    if (questGen.actionsInOrder[this.index + 1].action == "goto" || questGen.actionsInOrder[this.index + 1].action == "explore")
+                    {
+                        this.nextIsGotoFlag = true;
+                    }
                 }
             }
 
@@ -116,24 +152,91 @@ namespace ThePlotLords
 
         }
 
+        public override DialogFlow getDialogFlows(int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
+        {
+            return this.GetGotoActionDialogFlow(heroTarget, index, this.questGiver, questBase, questGen);
+        }
+
+        private DialogFlow GetGotoActionDialogFlow(Hero target, int index, Hero questGiver, QuestBase questBase, QuestGenTestQuest questGen)
+        {
+            string lastActionAfterGoto = "";
+            for (int i = index; i < questGen.actionsInOrder.Count; i++)
+            {
+                if (questGen.actionsInOrder[i].action != "goto")
+                {
+                    lastActionAfterGoto = questGen.actionsInOrder[i].action;
+                    break;
+                }
+            }
+            if (lastActionAfterGoto == "")
+            {
+                lastActionAfterGoto = "goto";
+            }
+
+            TextObject npcLine1 = new TextObject(this.getActionString(lastActionAfterGoto), null);
+            TextObject textObject = new TextObject("Safe travels.", null);
+
+            return DialogFlow.CreateDialogFlow("start", 125).NpcLine(npcLine1, null, null).Condition(() => Hero.OneToOneConversationHero == target && index == questGen.currentActionIndex).BeginPlayerOptions().PlayerOption(new TextObject("Alright, I'll keep moving then.", null), null).NpcLine(textObject, null, null).Consequence(delegate
+            {
+                questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+                questGen.RemoveTrackedObject(settlementTarget);
+                questGen.currentActionIndex++;
+                actioncomplete = true;
+                questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                {
+                    questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                }
+                else
+                {
+                    questGen.SuccessConsequences();
+                }
+            }).CloseDialog().EndPlayerOptions().CloseDialog();
+        }
+
         public override void OnSettlementEnteredQuest(MobileParty party, Settlement settlement, Hero hero, int index, QuestGenTestQuest questGen, QuestBase questBase)
         {
             if (settlement.Name == settlementTarget.Name)
             {
-                if (!actioncomplete)
+                if (!actioncomplete && !settlementEntered)
                 {
-                    questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
-                    questGen.RemoveTrackedObject(settlementTarget);
-                    questGen.currentActionIndex++;
-                    actioncomplete = true;
-                    questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
-                    if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                    settlementEntered = true;
+
+                    if (this.nextIsGotoFlag)
                     {
-                        questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                        questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+
+                        foreach (Hero h in this.settlementTarget.Notables)
+                        {
+                            if (h != null)
+                            {
+                                this.heroTarget = h;
+                                break;
+                            }
+                        }
+
+                        TextObject textObject = new TextObject("Talk with {HERO}", null);
+                        textObject.SetTextVariable("HERO", heroTarget.Name);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+
+                        InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
+                        Campaign.Current.ConversationManager.AddDialogFlow(this.GetGotoActionDialogFlow(heroTarget, index, questGiver, questBase, questGen), this);
                     }
                     else
                     {
-                        questGen.SuccessConsequences();
+                        questGen.UpdateQuestTaskS(questGen.journalLogs[this.index], 1);
+                        questGen.RemoveTrackedObject(settlementTarget);
+                        questGen.currentActionIndex++;
+                        actioncomplete = true;
+                        questGen.chosenMission.run(CustomBTStep.questQ, questBase, questGen);
+                        if (questGen.currentActionIndex < questGen.actionsInOrder.Count)
+                        {
+                            questGen.currentAction = questGen.actionsInOrder[questGen.currentActionIndex];
+                        }
+                        else
+                        {
+                            questGen.SuccessConsequences();
+                        }
                     }
                 }
             }
@@ -210,6 +313,44 @@ namespace ThePlotLords
                     break;
             }
             return strat.ToString();
+        }
+
+        public string getActionString(string action)
+        {
+
+            switch (action)
+            {
+                case "capture":
+                    return "Whoever you are looking to capture is not in this settlement, you should continue your journey.";
+                case "damage":
+                    return "Whoever you are looking to attack is not in this settlement, you should continue your journey.";
+                case "exchange":
+                    return "Whoever you are looking to exchange products with is not in this settlement, you should continue your journey.";
+                case "explore":
+                    return "Your final destination is not this settlement, you should continue exploring.";
+                case "free":
+                    return "Whoever you are looking to free is not in this settlement, you should continue your journey.";
+                case "gather":
+                    return "The items you're looking for don't appear to be on this settlement, you should continue your journey.";
+                case "give":
+                    return "Whoever you are looking to give products to is not in this settlement, you should continue your journey.";
+                case "goto":
+                    return "Your final destination is not this settlement, you should continue your journey.";
+                case "kill":
+                    return "Whoever you are looking to kill is not in this settlement, you should continue your journey.";
+                case "listen":
+                    return "Whoever you are looking to receive information is not in this settlement, you should continue your journey.";
+                case "report":
+                    return "Whoever you are looking to transmit information is not in this settlement, you should continue your journey.";
+                case "subquest":
+                    return "Whoever you are looking to talk with is not in this settlement, you should continue your journey.";
+                case "take":
+                    return "Whoever you are looking to steal from is not in this settlement, you should continue your journey.";
+                case "use":
+                    return "This settlement doesn't appear to be the best place to train your skills, you should continue your journey.";
+            }
+
+            return "What you're looking for doesn't appear to be in this settlement. You should continue your journey.";
         }
 
         public override TextObject getStepDescription(string strategy)

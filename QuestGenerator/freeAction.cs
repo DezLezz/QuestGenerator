@@ -89,6 +89,12 @@ namespace ThePlotLords
                                 {
                                     defeatPlace = questGen.alternativeActionsInOrder[i - 1].GetSettlementTarget();
                                 }
+
+                                if (defeatPlace == null)
+                                {
+                                    defeatPlace = questGiver.CurrentSettlement;
+                                }
+
                                 Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
                                 if (targetSet != null)
@@ -175,6 +181,10 @@ namespace ThePlotLords
                                 else
                                 {
                                     defeatPlace = questGen.actionsInOrder[i - 1].GetSettlementTarget();
+                                }
+                                if (defeatPlace == null)
+                                {
+                                    defeatPlace = questGiver.CurrentSettlement;
                                 }
                                 Settlement targetSet = SettlementHelper.FindNearestSettlementToPoint(defeatPlace.Position2D, (Settlement x) => x.IsTown && x.MapFaction.IsAtWarWith(questGiver.MapFaction));
 
