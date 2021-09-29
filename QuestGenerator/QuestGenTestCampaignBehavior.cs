@@ -1041,7 +1041,7 @@ namespace ThePlotLords
                         textObject += stratObj.ToString();
                     }
 
-                    return new TextObject(textObject, null);
+                    return new TextObject(motivationC + " " + textObject, null);
 
                 }
             }
@@ -2907,14 +2907,21 @@ namespace ThePlotLords
 
             private void QuestAcceptedConsequences()
             {
-                base.StartQuest();
+                if (this.actionsInOrder.Count <= 0)
+                {
+                    this.CompleteQuestWithSuccess();
+                }
+                else
+                {
+                    base.StartQuest();
 
-                currentAction = actionsInOrder[0];
-                currentActionIndex = 0;
+                    currentAction = actionsInOrder[0];
+                    currentActionIndex = 0;
 
-                chosenMission.run(CustomBTStep.questQ, (QuestBase)this, this);
+                    chosenMission.run(CustomBTStep.questQ, (QuestBase)this, this);
 
-                this.saveActionTargets();
+                    this.saveActionTargets();
+                }
 
             }
 

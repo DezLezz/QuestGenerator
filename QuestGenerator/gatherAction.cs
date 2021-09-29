@@ -219,7 +219,7 @@ namespace ThePlotLords
                             int r = rnd.Next(itemList.Count());
 
                             newItem = itemList.ElementAt(r);
-                            while (newItem.Value > 300)
+                            while (newItem.Value > 300 && newItem == null)
                             {
                                 r = rnd.Next(itemList.Count());
 
@@ -487,7 +487,7 @@ namespace ThePlotLords
                 if (refined.OutputCount > 0)
                 {
                     ItemObject craftingMaterialItem3 = Campaign.Current.Models.SmithingModel.GetCraftingMaterialItem(refined.Output);
-                    if (craftingMaterialItem3.Name == equipmentElement.Item.Name)
+                    if (craftingMaterialItem3.Name == this.itemTarget.Name)
                     {
                         flag = true;
                         amountPurchased += refined.OutputCount;
@@ -497,7 +497,7 @@ namespace ThePlotLords
                 if (refined.Output2Count > 0)
                 {
                     ItemObject craftingMaterialItem4 = Campaign.Current.Models.SmithingModel.GetCraftingMaterialItem(refined.Output2);
-                    if (craftingMaterialItem4.Name == equipmentElement.Item.Name)
+                    if (craftingMaterialItem4.Name == this.itemTarget.Name)
                     {
                         flag = true;
                         amountPurchased += refined.Output2Count;

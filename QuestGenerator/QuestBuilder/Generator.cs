@@ -346,17 +346,6 @@ namespace ThePlotLords.QuestBuilder
 
             string path = @"..\..\Modules\ThePlotLords\MissionList.xml";
 
-            for (int i = 0; i < testQuest.steps.Count - 1; i++)
-            {
-                if (testQuest.steps[i].name == "goto")
-                {
-                    if (testQuest.steps[i + 1].name == "goto")
-                    {
-                        InformationManager.DisplayMessage(new InformationMessage("two goto"));
-
-                    }
-                }
-            }
 
             List<CustomBTNode> tempList = new List<CustomBTNode>();
             tempList.Add(testGiver.customBTTree);

@@ -127,6 +127,10 @@ namespace ThePlotLords.QuestBuilder
             if (node.action != null && node.action.type == "Terminal")
             {
                 q.steps.Add(node.action);
+                //if (node.action.name == "gather")
+                //{
+                //    InformationManager.DisplayMessage(new InformationMessage("gather"));
+                //}
             }
             else
             {
