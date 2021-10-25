@@ -447,8 +447,16 @@ namespace ThePlotLords
             switch (strategy)
             {
                 case "Rescue NPC":
-                    strat = new TextObject("Rescue {HERO}.", null);
-                    strat.SetTextVariable("HERO", heroTarget.Name);
+                    if (heroTarget != null)
+                    {
+                        if (heroTarget.Name != null)
+                        {
+                            strat = new TextObject("Rescue {HERO}.", null);
+                            strat.SetTextVariable("HERO", heroTarget.Name);
+                        }
+                    }
+
+                    
                     break;
             }
             return strat;

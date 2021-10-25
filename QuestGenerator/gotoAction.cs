@@ -77,7 +77,7 @@ namespace ThePlotLords
                 string placeNumb = this.Action.param[0].target;
                 Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                 {
-                    return x != questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == questGiver.MapFaction;
+                    return x != questGiver.CurrentSettlement && !x.IsHideout && x.Notables.Count >= 1 && x.MapFaction == questGiver.MapFaction;
                 });
 
                 if (alternative)

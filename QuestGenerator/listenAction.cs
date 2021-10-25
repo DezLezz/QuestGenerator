@@ -117,7 +117,21 @@ namespace ThePlotLords
                         if (questFlag)
                         {
                             newHero = questGen.actionsInOrder[questindex].GetHeroTarget();
-                            targetHero = newHero.Name.ToString();
+                            if (newHero == null || newHero.Name == null)
+                            {
+                                foreach (Hero hero in questGiver.CurrentSettlement.Notables)
+                                {
+                                    if (hero != questGiver)
+                                    {
+                                        targetHero = hero.Name.ToString();
+                                        newHero = hero;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                targetHero = newHero.Name.ToString();
+                            }
                         }
                         else if (questGen.actionsInOrder[i - 1].action == "goto")
                         {
@@ -670,7 +684,7 @@ namespace ThePlotLords
                 case "Recruit":
                     Settlement settlement = SettlementHelper.FindRandomSettlement(delegate (Settlement x)
                     {
-                        return x != questGiver.CurrentSettlement && !x.IsHideout() && x.Notables.Count >= 1 && x.MapFaction == questGiver.MapFaction && x.HasRecruits;
+                        return x != questGiver.CurrentSettlement && !x.IsHideout && x.Notables.Count >= 1 && x.MapFaction == questGiver.MapFaction && x.HasRecruits;
                     });
 
                     if (settlement != null)

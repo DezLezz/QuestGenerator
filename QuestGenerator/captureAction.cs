@@ -241,7 +241,7 @@ namespace ThePlotLords
                         }
                         else
                         {
-                            TextObject textObject = new TextObject("You've been requested to capture a man belonging to the a man belonging to the " + nonHeroTarget + ".", null);
+                            TextObject textObject = new TextObject("You've been requested to capture a man belonging to the " + nonHeroTarget + ".", null);
                             questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
                             InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                         }
@@ -464,7 +464,7 @@ namespace ThePlotLords
                     }
                     else
                     {
-                        strat = new TextObject("Capture capture someone from the {HERO}", null);
+                        strat = new TextObject("Capture someone from the {HERO}", null);
                         strat.SetTextVariable("HERO", nonHeroTarget);
                     }
 
