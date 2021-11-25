@@ -715,6 +715,8 @@ namespace ThePlotLords
 
                     TextObject t = new TextObject("[PL] - " + textObject, null);
 
+                    //TextObject temp_t = new TextObject("Plot Lords - A Procedural Quest Generator for Mount & Blade II: Bannerlord",null);
+
                     return t;
 
                 }
@@ -2919,7 +2921,7 @@ namespace ThePlotLords
                     currentActionIndex = 0;
 
                     chosenMission.run(CustomBTStep.questQ, (QuestBase)this, this);
-
+                    
                     this.saveActionTargets();
                 }
 

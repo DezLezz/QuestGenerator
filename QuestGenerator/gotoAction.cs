@@ -126,7 +126,7 @@ namespace ThePlotLords
                         questBase.AddTrackedObject(settlementTarget);
                         TextObject textObject = new TextObject("Visit the settlement of {SETTLEMENT}", null);
                         textObject.SetTextVariable("SETTLEMENT", settlementTarget.Name);
-                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, false);
+                        questGen.journalLogs[index] = questGen.getDiscreteLog(textObject, textObject, 0, 1, null, true);
 
                         InformationManager.DisplayMessage(new InformationMessage("Next Task: " + textObject));
                     }

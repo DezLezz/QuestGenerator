@@ -225,11 +225,18 @@ namespace ThePlotLords
 
                                 newItem = itemList.ElementAt(r);
                             }
-
-                            amount = 300 / newItem.Value;
-                            if (amount <= 0)
+                            
+                            if (newItem.Value <= 0)
                             {
-                                amount = 1;
+                                amount = 300 / newItem.Value;
+                                if (amount <= 0)
+                                {
+                                    amount = 1;
+                                }
+                            }
+                            else
+                            {
+                                amount = 300;
                             }
                             this.SetItemAmount(amount);
 

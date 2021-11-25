@@ -375,12 +375,20 @@ namespace ThePlotLords
                                     questGen.chosenMission.updateItemTargets(itemNumb, array2[0]);
                                 }
                             }
-
-                            int amount = 300 / this.itemTarget.Value;
-                            if (amount <= 0)
+                            int amount = 0;
+                            if (this.itemTarget.Value <= 0)
                             {
-                                amount = 1;
+                                amount = 300 / this.itemTarget.Value;
+                                if (amount <= 0)
+                                {
+                                    amount = 1;
+                                }
                             }
+                            else
+                            {
+                                amount = 300;
+                            }
+                            
                             itemAmount = amount;
                         }
 
